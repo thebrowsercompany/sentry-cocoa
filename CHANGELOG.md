@@ -1,5 +1,106 @@
 # Changelog
 
+## 7.2.2
+
+- fix: Crash when swizzling Nib UIViewController (#1277)
+
+## 7.2.1
+
+This release fixes a crucial issue for auto performance instrumentation that caused crashes when using nested ViewControllers.
+
+- fix: Callback issue for auto performance (#1275)
+
+## 7.2.0
+
+This release contains support for [auto performance instrumentation](https://docs.sentry.io/platforms/apple/performance/instrumentation/automatic-instrumentation/)
+for ViewControllers, HTTP requests, app start and slow and frozen frames.
+
+### Auto Performance Features
+
+- feat: Auto UI Performance Instrumentation (#1105, #1150, #1136, #1139, #1042, #1264, #1164, #1202, #1231, #1242)
+- feat: Measure slow and frozen frames (#1123)
+- feat: Measure app start time (#1111, #1228)
+- feat: Add automatic HTTP request performance monitoring (#1178, #1237, #1250, #1255)
+- feat: Add tags to Sentry Span (#1243)
+- feat: Sub-millis precision for spans and events (#1234)
+- feat: Add Sentry Trace HTTP Header (#1213)
+
+### More Features
+
+- feat: Add flag stichAsyncCode (#1172)
+- feat: Support XCFramework for Carthage (#1175)
+- feat: Add isEnabled property in SentrySDK (#1265)
+- feat: Add breadcrumbs for HTTP requests (#1258)
+- feat: Add clearAttachments to Scope (#1195)
+- feat: Expose tracked screen frames (#1262)
+- feat: Expose AppStartMeasurment for Hybrid SDKs (#1251)
+
+### Fixes
+
+- fix: Remove invalid excludes from `Package.swift` (#1169)
+- fix: Compile failure with C99 (#1224)
+- fix: Race on session task (#1233)
+- fix: Remove tags and data if empty for Span (#1246)
+
+### Performance Improvements
+
+- perf: Scope sync to SentryCrash (#1193)
+
+## 7.2.0-beta.9
+
+- feat: Expose tracked screen frames (#1262)
+- feat: Expose AppStartMeasurment for Hybrid SDKs (#1251)
+- fix: Span serialization HTTP data in wrong place. (#1255)
+- feat: Add tags to Sentry Span (#1243)
+
+## 7.2.0-beta.8
+
+- fix: Remove tags and data if empty for Span (#1246)
+- fix: Race Conditions in NetworkTracker (#1250)
+- fix: Don't create transactions for HTTP Requests. (#1237)
+
+## 7.2.0-beta.7
+
+- fix: Swizzle only inApp ViewControllers (#1242)
+- feat: Add Sentry Trace HTTP Header (#1213)
+- feat: Sub-millis precision for spans and events (#1234)
+- fix: Race on session task (#1233)
+
+## 7.2.0-beta.6
+
+- fix: ViewController swizzling before iOS 13 (#1231)
+- fix: AppStartMeasurement didFinishLaunching is nil (#1228)
+
+## 7.2.0-beta.5
+
+- perf: Scope sync to SentryCrash (#1193)
+- fix: Compile failure with C99 (#1224)
+
+## 7.2.0-beta.4
+
+- fix: Add viewAppearing to UIViewController spans (#1202)
+
+## 7.2.0-beta.3
+
+- feat: Add automatic http request performance monitoring (#1178)
+- feat: Add clearAttachments to Scope (#1195)
+
+## 7.2.0-beta.2
+
+- feat: Add flag stichAsyncCode (#1172)
+- feat: Support XCFramework for Carthage (#1175)
+- fix: Remove invalid excludes from `Package.swift` (#1169)
+
+## 7.2.0-beta.1
+
+- feat: Measure slow and frozen frames (#1123)
+- fix: Operation names for auto instrumentation (#1164)
+
+## 7.2.0-beta.0
+
+- feat: Measure app start time (#1111)
+- feat: Auto UI Performance Instrumentation (#1105, #1150, #1136, #1139, #1042)
+
 ## 7.1.4
 
 - fix: Compile failure with C99 (#1224)
