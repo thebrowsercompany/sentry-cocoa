@@ -1,5 +1,56 @@
 # Changelog
 
+## 7.4.0
+
+- feat: Add enableNetworkTracking flag (#1349)
+- fix: Memory Leak for Span (#1352)
+
+## 7.3.0
+
+- fix: Trying to swizzle a class without a library name (#1332)
+
+## 7.3.0-beta.0
+
+- fix: maxBreadcrumb zero crashes when adding (#1326)
+
+- feat: Add tracestate HTTP header support (#1291)
+
+## 7.2.10
+
+- No documented changes.
+
+## 7.2.9
+
+- Nothing
+
+## 7.2.8
+
+- fix: SpanProtocol add setData for Swift (#1305)
+- fix: SentryHub not checking spanContext sampled value (#1318)
+
+## 7.2.7
+
+- fix: Remove Trace Headers below iOS 14.0 (#1309)
+- fix: XCFramework output not preserving symlinks for macOS (#1281)
+
+## 7.2.6
+
+- fix: Add Trace Headers below iOS 14.0 (#1302)
+
+## 7.2.5
+
+- fix: Swizzling crash on iOS 13 (#1297)
+
+## 7.2.4
+
+- fix: Sentry HTTP Trace Header Breaking Requests (#1295)
+- fix: Apps crash when using a URLSessionTask subclass with currentRequest unavailable (#1294)
+
+## 7.2.3
+
+- fix: Build failure for SPM (#1284)
+- fix: Set app state on main thread when terminating (#1272)
+
 ## 7.2.2
 
 - fix: Crash when swizzling Nib UIViewController (#1277)
@@ -250,10 +301,10 @@ Features and fixes:
 ## 7.0.0-alpha.0
 
 **Breaking Change**: This version introduces a change to the grouping of issues. The SDK now sets the `inApp`
-flag for frames originating from only the main executable using [CFBundleExecutable](https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleexecutable). 
+flag for frames originating from only the main executable using [CFBundleExecutable](https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleexecutable).
 In previous versions, all frames originating from the application bundle were marked as `inApp`. This had the
 downside of marking frames of private frameworks inside the bundle as `inApp`. This problem is fixed now.
-Applications using static frameworks shouldn't be affected by this change. 
+Applications using static frameworks shouldn't be affected by this change.
 For more information on marking frames as inApp [docs](https://docs.sentry.io/platforms/apple/data-management/event-grouping/stack-trace-rules/#mark-in-app-frames).
 
 - fix: Mark frames as inApp #956
@@ -332,7 +383,7 @@ to group by domain only.
 
 - fix: Serialization of SentryScope #841
 - fix: Recrash parsing in SentryCrash #850
-- fix: Not crash during crash reporting #849 
+- fix: Not crash during crash reporting #849
 
 ## 6.0.8
 
@@ -436,11 +487,11 @@ Fix:
 This release also enables by default the option `attackStacktrace` which includes
 the stacktrace in all events, including `captureMessage` by default.
 
-Breaking Changes: 
+Breaking Changes:
 
 - feat: Attach stacktraces to all events by default #705
 
-Features and fixes: 
+Features and fixes:
 
 - feat: Crash event and session in same envelope #731
 - feat: Allow nil in setExtraValue on SentryScope to remove key #703
@@ -451,7 +502,7 @@ Breaking changes:
 
 - feat: Replace NSNumber with BOOL in SentryOptions #719
 
-Features and fixes: 
+Features and fixes:
 
 - fix: Header Imports for the Swift Package Manager #721
 - fix: Async storing of envelope to disk #714

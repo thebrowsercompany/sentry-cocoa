@@ -57,6 +57,7 @@ class SentrySDKTests: XCTestCase {
     private var fixture: Fixture!
     
     override func setUp() {
+        super.setUp()
         fixture = Fixture()
     }
     
@@ -74,6 +75,18 @@ class SentrySDKTests: XCTestCase {
         clearTestState()
     }
     
+    // Repro for: https://github.com/getsentry/sentry-cocoa/issues/1325
+    func testStartWithZeroMaxBreadcrumbsOptionsDoesNotCrash() {
+        SentrySDK.start { options in
+            options.dsn = SentrySDKTests.dsnAsString
+            options.maxBreadcrumbs = 0
+        }
+
+        SentrySDK.addBreadcrumb(crumb: Breadcrumb(level: SentryLevel.warning, category: "test"))
+        let breadcrumbs = Dynamic(SentrySDK.currentHub().scope).breadcrumbArray as [Breadcrumb]?
+        XCTAssertEqual(0, breadcrumbs?.count)
+    }
+
     func testStartWithConfigureOptions() {
         SentrySDK.start { options in
             options.dsn = SentrySDKTests.dsnAsString
@@ -418,6 +431,27 @@ class SentrySDKTests: XCTestCase {
                 let crumb = TestData.crumb
                 crumb.message = "\(i)"
                 SentrySDK.addBreadcrumb(crumb: crumb)
+            }
+        }
+    }
+    
+    @available(tvOS 13.0, *)
+    @available(OSX 10.15, *)
+    @available(iOS 13.0, *)
+    func testMemoryFootprintOfTransactions() {
+        SentrySDK.start { options in
+            options.dsn = SentrySDKTests.dsnAsString
+        }
+        
+        self.measure(metrics: [XCTMemoryMetric()]) {
+            for _ in 0...1_000 {
+                let trans = SentrySDK.startTransaction(name: "no leak", operation: "")
+                
+                for _ in 0...10 {
+                    let span = trans.startChild(operation: "ui.load")
+                    span.finish()
+                }
+                trans.finish()
             }
         }
     }

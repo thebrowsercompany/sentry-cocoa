@@ -1,13 +1,16 @@
 #import "SentryNetworkTracker.h"
 #import "SentryBreadcrumb.h"
-#import "SentryHttpInterceptor+Private.h"
 #import "SentryHub+Private.h"
 #import "SentryLog.h"
 #import "SentryOptions+Private.h"
+#import "SentryOptions.h"
 #import "SentryPerformanceTracker.h"
 #import "SentrySDK+Private.h"
 #import "SentryScope+Private.h"
 #import "SentrySpan.h"
+#import "SentryTraceHeader.h"
+#import "SentryTraceState.h"
+#import "SentryTracer.h"
 #import <objc/runtime.h>
 
 static NSString *const SENTRY_NETWORK_REQUEST_TRACKER_SPAN = @"SENTRY_NETWORK_REQUEST_TRACKER_SPAN";
@@ -32,7 +35,7 @@ SentryNetworkTracker ()
 - (instancetype)init
 {
     if (self = [super init]) {
-        self.isEnabled = NO;
+        _isEnabled = NO;
     }
     return self;
 }
@@ -40,14 +43,14 @@ SentryNetworkTracker ()
 - (void)enable
 {
     @synchronized(self) {
-        self.isEnabled = YES;
+        _isEnabled = YES;
     }
 }
 
 - (void)disable
 {
     @synchronized(self) {
-        self.isEnabled = NO;
+        _isEnabled = NO;
     }
 }
 
@@ -59,11 +62,7 @@ SentryNetworkTracker ()
         }
     }
 
-    // We need to check if this request was created by SentryHTTPInterceptor so we don't end up with
-    // two spans for the same request.
-    NSNumber *intercepted = [NSURLProtocol propertyForKey:SENTRY_INTERCEPTED_REQUEST
-                                                inRequest:[sessionTask currentRequest]];
-    if (intercepted != nil && [intercepted boolValue])
+    if (![self isTaskSupported:sessionTask])
         return;
 
     // SDK not enabled no need to continue
@@ -73,7 +72,7 @@ SentryNetworkTracker ()
 
     NSURL *url = [[sessionTask currentRequest] URL];
 
-    if (url == nil || ![self isTaskSupported:sessionTask])
+    if (url == nil)
         return;
 
     // Don't measure requests to Sentry's backend
@@ -247,6 +246,30 @@ SentryNetworkTracker ()
         return kSentrySpanStatusDeadlineExceeded;
     }
     return kSentrySpanStatusUndefined;
+}
+
+- (nullable NSDictionary *)addTraceHeader:(nullable NSDictionary *)headers
+{
+    @synchronized(self) {
+        if (!self.isEnabled) {
+            return headers;
+        }
+    }
+
+    id<SentrySpan> span = SentrySDK.currentHub.scope.span;
+    if (span == nil) {
+        return headers;
+    }
+
+    NSMutableDictionary *result = [[NSMutableDictionary alloc] initWithDictionary:headers];
+    result[SENTRY_TRACE_HEADER] = [span toTraceHeader].value;
+
+    SentryTracer *tracer = [SentryTracer getTracer:span];
+    if (tracer != nil) {
+        result[SENTRY_TRACESTATE_HEADER] = [tracer.traceState toHTTPHeader];
+    }
+
+    return [[NSDictionary alloc] initWithDictionary:result];
 }
 
 @end

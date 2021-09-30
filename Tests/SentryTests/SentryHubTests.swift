@@ -58,6 +58,7 @@ class SentryHubTests: XCTestCase {
     private var sut: SentryHub!
     
     override func setUp() {
+        super.setUp()
         fixture = Fixture()
         fixture.fileManager.deleteCurrentSession()
         fixture.fileManager.deleteCrashedSession()
@@ -69,6 +70,7 @@ class SentryHubTests: XCTestCase {
     }
     
     override func tearDown() {
+        super.tearDown()
         fixture.fileManager.deleteCurrentSession()
         fixture.fileManager.deleteCrashedSession()
         fixture.fileManager.deleteAppState()
@@ -617,7 +619,7 @@ class SentryHubTests: XCTestCase {
         modifyEventDict(&eventDict)
         
         let eventData = try JSONSerialization.data(withJSONObject: eventDict)
-        return SentryEnvelope(header: SentryEnvelopeHeader(id: event.eventId), items: [SentryEnvelopeItem(header: envelopeItem.header, data: eventData)])
+        return SentryEnvelope(header: SentryEnvelopeHeader(id: event.eventId, traceState: nil), items: [SentryEnvelopeItem(header: envelopeItem.header, data: eventData)])
     }
     
     private func advanceTime(bySeconds: TimeInterval) {

@@ -32,6 +32,7 @@ class SentryTracerTests: XCTestCase {
             
             scope = Scope()
             client = TestClient(options: Options())!
+            client.options.tracesSampleRate = 1
             hub = TestHub(client: client, andScope: scope)
             
             CurrentDate.setCurrentDateProvider(currentDateProvider)
@@ -54,7 +55,7 @@ class SentryTracerTests: XCTestCase {
         }
         
         func getSut(waitForChildren: Bool = true) -> SentryTracer {
-            return SentryTracer(transactionContext: transactionContext, hub: hub, waitForChildren: waitForChildren)
+            return hub.startTransaction(with: transactionContext, bindToScope: false, waitForChildren: waitForChildren, customSamplingContext: [:]) as! SentryTracer
         }
     }
     
@@ -175,7 +176,7 @@ class SentryTracerTests: XCTestCase {
         let appStartMeasurement = fixture.getAppStartMeasurement(type: .warm)
         SentrySDK.setAppStartMeasurement(appStartMeasurement)
         
-        let sut = SentryTracer(transactionContext: TransactionContext(name: "custom", operation: "custom"), hub: fixture.hub, waitForChildren: false)
+        let sut = fixture.hub.startTransaction(transactionContext: TransactionContext(name: "custom", operation: "custom")) as! SentryTracer
         sut.finish()
         fixture.hub.group.wait()
         
@@ -352,6 +353,13 @@ class SentryTracerTests: XCTestCase {
         assertNoMeasurementsAdded()
     }
     #endif
+    
+    func testSetExtra_ForwardsToSetData() {
+        let sut = fixture.getSut()
+        sut.setExtra(value: 0, key: "key")
+        
+        XCTAssertEqual(["key": 0], sut.data as! [String: Int])
+    }
     
     private func getSerializedTransaction() -> [String: Any] {
         guard let transaction = fixture.hub.capturedEventsWithScopes.first?.event else {

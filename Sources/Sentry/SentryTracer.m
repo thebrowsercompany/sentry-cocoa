@@ -2,13 +2,14 @@
 #import "PrivateSentrySDKOnly.h"
 #import "SentryAppStartMeasurement.h"
 #import "SentryFramesTracker.h"
-#import "SentryHub.h"
+#import "SentryHub+Private.h"
 #import "SentryLog.h"
 #import "SentrySDK+Private.h"
 #import "SentryScope.h"
 #import "SentrySpan.h"
 #import "SentrySpanContext.h"
 #import "SentrySpanId.h"
+#import "SentryTraceState.h"
 #import "SentryTransaction+Private.h"
 #import "SentryTransaction.h"
 #import "SentryTransactionContext.h"
@@ -36,6 +37,7 @@ SentryTracer ()
 
 @implementation SentryTracer {
     BOOL _waitForChildren;
+    SentryTraceState *_traceState;
 
 #if SENTRY_HAS_UIKIT
     BOOL _startTimeChanged;
@@ -173,6 +175,20 @@ static BOOL appStartMeasurementRead;
     return self.rootSpan.startTimestamp;
 }
 
+- (SentryTraceState *)traceState
+{
+    if (_traceState == nil) {
+        @synchronized(self) {
+            if (_traceState == nil) {
+                _traceState = [[SentryTraceState alloc] initWithTracer:self
+                                                                 scope:_hub.scope
+                                                               options:SentrySDK.options];
+            }
+        }
+    }
+    return _traceState;
+}
+
 - (void)setStartTimestamp:(NSDate *)startTimestamp
 {
     self.rootSpan.startTimestamp = startTimestamp;
@@ -200,6 +216,11 @@ static BOOL appStartMeasurementRead;
 - (void)setDataValue:(id)value forKey:(NSString *)key
 {
     [self.rootSpan setDataValue:value forKey:key];
+}
+
+- (void)setExtraValue:(nullable id)value forKey:(NSString *)key
+{
+    [self setDataValue:value forKey:key];
 }
 
 - (void)removeDataForKey:(NSString *)key
@@ -265,7 +286,7 @@ static BOOL appStartMeasurementRead;
         }
     }];
 
-    [_hub captureEvent:[self toTransaction] withScope:_hub.scope];
+    [_hub captureTransaction:[self toTransaction] withScope:_hub.scope];
 }
 
 - (SentryTransaction *)toTransaction
@@ -470,6 +491,20 @@ static BOOL appStartMeasurementRead;
     @synchronized(appStartMeasurementLock) {
         appStartMeasurementRead = NO;
     }
+}
+
++ (nullable SentryTracer *)getTracer:(id<SentrySpan>)span
+{
+    if (span == nil) {
+        return nil;
+    }
+
+    if ([span isKindOfClass:[SentryTracer class]]) {
+        return span;
+    } else if ([span isKindOfClass:[SentrySpan class]]) {
+        return [(SentrySpan *)span tracer];
+    }
+    return nil;
 }
 
 @end

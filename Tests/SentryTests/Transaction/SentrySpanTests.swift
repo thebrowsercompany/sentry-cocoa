@@ -12,6 +12,7 @@ class SentrySpanTests: XCTestCase {
          
         init() {
             options = Options()
+            options.tracesSampleRate = 1
             options.dsn = TestConstants.dsnAsString(username: "username")
             options.environment = "test"
             currentDateProvider.setDate(date: TestData.timestamp)
@@ -30,6 +31,7 @@ class SentrySpanTests: XCTestCase {
     
     private var fixture: Fixture!
     override func setUp() {
+        super.setUp()
         fixture = Fixture()
         CurrentDate.setCurrentDateProvider(fixture.currentDateProvider)
     }
@@ -158,7 +160,7 @@ class SentrySpanTests: XCTestCase {
         XCTAssertEqual(serialization["timestamp"] as? TimeInterval, TestData.timestamp.timeIntervalSince1970)
         XCTAssertEqual(serialization["start_timestamp"] as? TimeInterval, TestData.timestamp.timeIntervalSince1970)
         XCTAssertEqual(serialization["type"] as? String, SpanContext.type)
-        XCTAssertEqual(serialization["sampled"] as? String, "false")
+        XCTAssertEqual(serialization["sampled"] as? String, "true")
         XCTAssertNotNil(serialization["data"])
         XCTAssertNotNil(serialization["tags"])
         XCTAssertEqual((serialization["data"] as! Dictionary)[fixture.extraKey], fixture.extraValue)
@@ -188,6 +190,7 @@ class SentrySpanTests: XCTestCase {
     }
     
     func testTraceHeaderNotSampled() {
+        fixture.options.tracesSampleRate = 0
         let span = fixture.getSut()
         let header = span.toTraceHeader()
         
@@ -215,6 +218,13 @@ class SentrySpanTests: XCTestCase {
         XCTAssertEqual(header.spanId, span.context.spanId)
         XCTAssertEqual(header.sampled, .undecided)
         XCTAssertEqual(header.value(), "\(span.context.traceId)-\(span.context.spanId)")
+    }
+    
+    func testSetExtra_ForwardsToSetData() {
+        let sut = SentrySpan(context: SpanContext(operation: "test"))
+        sut.setExtra(value: 0, key: "key")
+        
+        XCTAssertEqual(["key": 0], sut.data as! [String: Int])
     }
     
     @available(tvOS 10.0, *)

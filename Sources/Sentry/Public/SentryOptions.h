@@ -176,6 +176,12 @@ NS_SWIFT_NAME(Options)
 @property (nonatomic, assign) BOOL enableAutoPerformanceTracking;
 
 /**
+ * When enabled, the SDK adds breadcrumbs for HTTP requests and tracks performance for HTTP
+ * requests if auto performance tracking is enabled. The default is <code>YES</code>.
+ */
+@property (nonatomic, assign) BOOL enableNetworkTracking;
+
+/**
  * Indicates the percentage of the tracing data that is collected. Setting this to 0 or NIL discards
  * all trace data, 1.0 collects all trace data, 0.01 collects 1% of all trace data. The default is
  * 0. The value needs to be >= 0.0 and <= 1.0. When setting a value out of range  the SDK sets it to
@@ -229,6 +235,13 @@ NS_SWIFT_NAME(Options)
  * Set as delegate on the NSURLSession used for all network data-transfer tasks performed by Sentry.
  */
 @property (nullable, nonatomic, weak) id<NSURLSessionDelegate> urlSessionDelegate;
+
+/**
+ * Controls if the `tracestate` header is attached to envelopes and HTTP client integrations.
+ *
+ * Note: this is an experimental API and will be removed without notice.
+ */
+@property (nonatomic) BOOL experimentalEnableTraceSampling;
 
 @end
 
