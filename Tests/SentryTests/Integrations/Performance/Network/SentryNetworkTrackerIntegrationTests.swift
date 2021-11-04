@@ -3,7 +3,7 @@ import XCTest
 class SentryNetworkTrackerIntegrationTests: XCTestCase {
     
     private static let dsnAsString = TestConstants.dsnAsString(username: "SentryNetworkTrackerIntegrationTests")
-    private static let testURL = URL(string: "https://sentry-brand.storage.googleapis.com/sentry-logo-black.png")!
+    private static let testURL = URL(fileURLWithPath: "")
     private static let transactionName = "TestTransaction"
     private static let transactionOperation = "Test"
     
@@ -58,6 +58,12 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
     func testNetworkTrackerDisabled_WhenTracingDisabled() {
         testNetworkTrackerDisabled { options in
             options.tracesSampleRate = 0.0
+        }
+    }
+    
+    func testNetworkTrackerDisabled_WhenSwizzlingDisabled() {
+        testNetworkTrackerDisabled { options in
+            options.enableSwizzling = false
         }
     }
     
@@ -130,7 +136,28 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
         }
         
         dataTask.resume()
-        wait(for: [expect], timeout: 1)
+        wait(for: [expect], timeout: 5)
+    }
+    
+    func testWhenTaskCancelledOrSuspended_OnlyOneBreadcrumb() {
+        startSDK()
+        
+        let expect = expectation(description: "Callback Expectation")
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        
+        let dataTask = session.dataTask(with: SentryNetworkTrackerIntegrationTests.testURL) { (_, _, _) in
+            expect.fulfill()
+        }
+        
+        dataTask.resume()
+        dataTask.suspend()
+        dataTask.resume()
+        dataTask.cancel()
+        wait(for: [expect], timeout: 5)
+        
+        let scope = SentrySDK.currentHub().scope
+        let breadcrumbs = Dynamic(scope).breadcrumbArray as [Breadcrumb]?
+        XCTAssertEqual(1, breadcrumbs?.count)
     }
     
     private func testNetworkTrackerDisabled(configureOptions: (Options) -> Void) {
@@ -145,7 +172,7 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
     
     /**
      * The header can only be added when we can swizzle URLSessionConfiguration. For more details see
-     * SentryNetworkSwizzling#swizzleNSURLSessionConfiguration.
+     * SentryNetworkTrackingIntegration#swizzleNSURLSessionConfiguration.
      */
     private func canHeaderBeAdded() -> Bool {
         let selector = NSSelectorFromString("HTTPAdditionalHeaders")
