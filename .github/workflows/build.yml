@@ -4,7 +4,13 @@ on:
     branches:
       - master
       - release/**
+
   pull_request:
+    paths:
+      - 'Sources/**'
+      - 'test-server/**'
+      - 'Samples/**'
+      - '.github/workflows/**'
 
 jobs:
   # We had issues that the release build was broken on master.
@@ -51,6 +57,7 @@ jobs:
       
       # Disable code signing. We just want to make sure these compile.
       - run: >-
+          env NSUnbufferedIO=YES
           xcodebuild
           -workspace Sentry.xcworkspace
           -scheme '${{matrix.scheme}}'
@@ -72,6 +79,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}
+          if-no-files-found: error
           path: |
             ${{ github.workspace }}/*.zip
 
@@ -91,6 +99,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}
+          if-no-files-found: error
           path: |
             ${{ github.workspace }}/*.zip
  

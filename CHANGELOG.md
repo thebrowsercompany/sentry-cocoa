@@ -1,5 +1,28 @@
 # Changelog
 
+## 7.7.0
+
+- feat: Send Locale with Events (#1539)
+
+## 7.6.1
+
+- fix: iOS13-Swift build (#1522)
+- fix: Check task support on setState: (#1523)
+
+## 7.6.0
+
+- fix: Create span for loadView (#1495)
+- feat: Add flag to control network requests breadcrumbs (#1505)
+- feat: Support for ignored signals with SIGN_IGN (#1489)
+
+## 7.5.4
+
+- fix: Sending OOM when SDK is closed (#1487)
+
+## 7.5.3
+
+- fix: Use swizzling instead of KVO for network tracking (#1452)
+
 ## 7.5.2
 
 ### Various fixes & improvements

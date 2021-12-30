@@ -1,16 +1,17 @@
+import Sentry
+import SwiftUI
 import XCTest
 
 class SentryNetworkTrackerIntegrationTests: XCTestCase {
     
     private static let dsnAsString = TestConstants.dsnAsString(username: "SentryNetworkTrackerIntegrationTests")
-    private static let testURL = URL(fileURLWithPath: "")
+    private static let testURL = URL(string: "http://localhost:8080/hello")!
     private static let transactionName = "TestTransaction"
     private static let transactionOperation = "Test"
     
     private class Fixture {
         let dateProvider = TestCurrentDateProvider()
         let options: Options
-        let nsUrlRequest = NSURLRequest(url: SentryNetworkTrackerIntegrationTests.testURL)
         
         init() {
             options = Options()
@@ -65,6 +66,25 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
         testNetworkTrackerDisabled { options in
             options.enableSwizzling = false
         }
+    }
+    
+    func testBreadcrumbDisabled_WhenSwizzlingDisabled() {
+        fixture.options.enableSwizzling = false
+        startSDK()
+        
+        XCTAssertFalse(SentryNetworkTracker.sharedInstance.isNetworkBreadcrumbEnabled)
+    }
+    
+    func testBreadcrumbDisabled() {
+        fixture.options.enableNetworkBreadcrumbs = false
+        startSDK()
+        
+        XCTAssertFalse(SentryNetworkTracker.sharedInstance.isNetworkBreadcrumbEnabled)
+    }
+    
+    func testBreadcrumbEnabled() {
+        startSDK()
+        XCTAssertTrue(SentryNetworkTracker.sharedInstance.isNetworkBreadcrumbEnabled)
     }
     
     func testNSURLSessionConfiguration_ActiveSpan_HeadersAdded() {
@@ -139,7 +159,7 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
         wait(for: [expect], timeout: 5)
     }
     
-    func testWhenTaskCancelledOrSuspended_OnlyOneBreadcrumb() {
+    func flaky_testWhenTaskCancelledOrSuspended_OnlyOneBreadcrumb() {
         startSDK()
         
         let expect = expectation(description: "Callback Expectation")
@@ -149,15 +169,49 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
             expect.fulfill()
         }
         
+        //There is no way to predict what will happen calling this order of events
         dataTask.resume()
         dataTask.suspend()
         dataTask.resume()
         dataTask.cancel()
+        
         wait(for: [expect], timeout: 5)
         
         let scope = SentrySDK.currentHub().scope
         let breadcrumbs = Dynamic(scope).breadcrumbArray as [Breadcrumb]?
         XCTAssertEqual(1, breadcrumbs?.count)
+    }
+    
+    func testGetRequest_SpanCreatedAndTraceHeaderAdded() {
+        startSDK()
+        let transaction = SentrySDK.startTransaction(name: "Test Transaction", operation: "TEST", bindToScope: true) as! SentryTracer
+        let expect = expectation(description: "Request completed")
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        
+        let dataTask = session.dataTask(with: SentryNetworkTrackerIntegrationTests.testURL) { (data, _, _) in
+            let response = String(data: data ?? Data(), encoding: .utf8) ?? ""
+            
+            if self.canHeaderBeAdded() {
+                XCTAssertEqual("Hello, world! Trace header added.", response)
+            } else {
+                XCTAssertEqual("Hello, world!", response)
+            }
+            
+            expect.fulfill()
+        }
+        
+        dataTask.resume()
+        wait(for: [expect], timeout: 5)
+        
+        let children = Dynamic(transaction).children as [Span]?
+        
+        XCTAssertEqual(children?.count, 1) //Span was created in task resume swizzle.
+        let networkSpan = children![0]
+        XCTAssertTrue(networkSpan.isFinished) //Span was finished in task setState swizzle.
+        XCTAssertEqual(SENTRY_NETWORK_REQUEST_OPERATION, networkSpan.context.operation)
+        XCTAssertEqual("GET \(SentryNetworkTrackerIntegrationTests.testURL)", networkSpan.context.spanDescription)
+        
+        XCTAssertEqual("200", networkSpan.tags["http.status_code"])
     }
     
     private func testNetworkTrackerDisabled(configureOptions: (Options) -> Void) {
@@ -169,7 +223,7 @@ class SentryNetworkTrackerIntegrationTests: XCTestCase {
         _ = startTransactionBoundToScope()
         XCTAssertNil(configuration.httpAdditionalHeaders)
     }
-    
+        
     /**
      * The header can only be added when we can swizzle URLSessionConfiguration. For more details see
      * SentryNetworkTrackingIntegration#swizzleNSURLSessionConfiguration.
@@ -207,7 +261,11 @@ class BlockAllRequestsProtocol: URLProtocol {
     }
 
     override func startLoading() {
-        client?.urlProtocol(self, didFailWithError: BlockAllRequestsProtocol.error )
+        if client != nil {
+            client?.urlProtocol(self, didFailWithError: BlockAllRequestsProtocol.error )
+        } else {
+            XCTFail("Couldn't block request because client was nil.")
+        }
     }
 
     override func stopLoading() {
