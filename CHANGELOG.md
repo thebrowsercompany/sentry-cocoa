@@ -1,5 +1,30 @@
 # Changelog
 
+## 7.10.2
+
+fix: Crash in UIViewControllerSwizzling (#1692)
+
+## 7.10.1
+
+- fix: Swizzling UIViewControllers crash (#1670)
+- feat: Expose Installation ID for Hybrid SDKs (#1680)
+- fix: SentryNSURLSessionTaskSearch using invalid nil parameter with NSURLSession (#1669)
+
+## 7.10.0
+
+- fix: Always tracks App start for Hybrid SDKs (#1662) 
+- feat: Send SDK integrations (#1647)
+- fix: Don't track OOMs for unit tests (#1651)
+- fix: Add verification for vendor UUID in OOM logic (#1648)
+- fix crash in dirContentsCount() when dir == NULL (#1658)
+
+## 7.9.0
+
+- fix: Crash in SentrySubClassFinder (#1635)
+- fix: Set timestamp in init of event (#1629)
+- fix: Load invalid CrashState json (#1625)
+- feat: Auto I/O spans for NSData (#1557)
+
 ## 7.8.0
 
 - feat: Support for fatalError, assert, precondition (#1596)

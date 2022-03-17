@@ -11,6 +11,7 @@ SentryOptions ()
 
 @property (nullable, nonatomic, copy, readonly) NSNumber *defaultSampleRate;
 @property (nullable, nonatomic, copy, readonly) NSNumber *defaultTracesSampleRate;
+@property (nonatomic, strong) NSMutableSet<NSString *> *disabledIntegrations;
 
 @end
 
@@ -22,7 +23,8 @@ SentryOptions ()
         @"SentryCrashIntegration", @"SentryFramesTrackingIntegration",
         @"SentryAutoBreadcrumbTrackingIntegration", @"SentryAutoSessionTrackingIntegration",
         @"SentryAppStartTrackingIntegration", @"SentryOutOfMemoryTrackingIntegration",
-        @"SentryPerformanceTrackingIntegration", @"SentryNetworkTrackingIntegration"
+        @"SentryPerformanceTrackingIntegration", @"SentryNetworkTrackingIntegration",
+        @"SentryFileIOTrackingIntegration"
     ];
 }
 
@@ -35,6 +37,7 @@ SentryOptions ()
         self.maxBreadcrumbs = defaultMaxBreadcrumbs;
         self.maxCacheItems = 30;
         self.integrations = SentryOptions.defaultIntegrations;
+        self.disabledIntegrations = [NSMutableSet new];
         _defaultSampleRate = @1;
         self.sampleRate = _defaultSampleRate;
         self.enableAutoSessionTracking = YES;
@@ -46,6 +49,7 @@ SentryOptions ()
         self.sendDefaultPii = NO;
         self.enableAutoPerformanceTracking = YES;
         self.enableNetworkTracking = YES;
+        self.enableFileIOTracking = NO;
         self.enableNetworkBreadcrumbs = YES;
         _defaultTracesSampleRate = nil;
         self.tracesSampleRate = _defaultTracesSampleRate;
@@ -214,6 +218,9 @@ SentryOptions ()
     [self setBool:options[@"enableNetworkTracking"]
             block:^(BOOL value) { self->_enableNetworkTracking = value; }];
 
+    [self setBool:options[@"enableFileIOTracking"]
+            block:^(BOOL value) { self->_enableFileIOTracking = value; }];
+
     if ([options[@"tracesSampleRate"] isKindOfClass:[NSNumber class]]) {
         self.tracesSampleRate = options[@"tracesSampleRate"];
     }
@@ -327,6 +334,21 @@ SentryOptions ()
     });
 
     return [block isKindOfClass:blockClass];
+}
+
+- (NSSet<NSString *> *)enabledIntegrations
+{
+    NSMutableSet<NSString *> *enabledIntegrations =
+        [[NSMutableSet alloc] initWithArray:self.integrations];
+    for (NSString *integration in self.disabledIntegrations) {
+        [enabledIntegrations removeObject:integration];
+    }
+    return enabledIntegrations;
+}
+
+- (void)removeEnabledIntegration:(NSString *)integration
+{
+    [self.disabledIntegrations addObject:integration];
 }
 
 @end

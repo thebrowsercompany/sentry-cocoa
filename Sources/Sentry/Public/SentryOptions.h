@@ -167,9 +167,12 @@ NS_SWIFT_NAME(Options)
  * When enabled, the SDK sends personal identifiable along with events. The default is
  * <code>NO</code>.
  *
- * @discussion When the user of an event doesn't contain an IP address, the SDK sets it to
- * <code>{{auto}}</code> to instruct the server to use the connection IP address as the user
- * address.
+ * @discussion When the user of an event doesn't contain an IP address, and this flag is
+ * <code>YES</code>, the SDK sets it to <code>{{auto}}</code> to instruct the server to use the
+ * connection IP address as the user address. Due to backward compatibility concerns, Sentry set the
+ * IP address to <code>{{auto}}</code> out of the box for Cocoa. If you want to stop Sentry from
+ * using the connections IP address, you have to enable Prevent Storing of IP Addresses in your
+ * project settings in Sentry.
  */
 @property (nonatomic, assign) BOOL sendDefaultPii;
 
@@ -187,6 +190,14 @@ NS_SWIFT_NAME(Options)
  * <code>YES</code>.
  */
 @property (nonatomic, assign) BOOL enableNetworkTracking;
+
+/**
+ * This feature is EXPERIMENTAL.
+ *
+ * When enabled, the SDK tracks performance for file IO reads and writes with NSData if auto
+ * performance tracking and enableSwizzling are enabled. The default is <code>NO</code>.
+ */
+@property (nonatomic, assign) BOOL enableFileIOTracking;
 
 /**
  * Indicates the percentage of the tracing data that is collected. Setting this to 0 or NIL discards
@@ -255,8 +266,8 @@ NS_SWIFT_NAME(Options)
  *
  * @discussion When turned off the following features are disabled: breadcrumbs for touch events and
  * navigation with UIViewControllers, automatic instrumentation for UIViewControllers, automatic
- * instrumentation for HTTP requests, and automatically added sentry-trace header to HTTP requests
- * for distributed tracing.
+ * instrumentation for HTTP requests, automatic instrumentation for file IO with NSData, and
+ * automatically added sentry-trace header to HTTP requests for distributed tracing.
  */
 @property (nonatomic, assign) BOOL enableSwizzling;
 

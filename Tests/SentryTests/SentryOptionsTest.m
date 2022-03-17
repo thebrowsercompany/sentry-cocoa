@@ -312,6 +312,30 @@
         @"Default integrations are not set correctly");
 }
 
+- (void)testEnabledIntegrations_SameAsDefault
+{
+    SentryOptions *options = [self getValidOptions:@{}];
+
+    [self assertArrayEquals:[SentryOptions defaultIntegrations]
+                     actual:options.enabledIntegrations.allObjects];
+}
+
+- (void)testEnabledIntegrations_AddCustomAndRemoveIntegration
+{
+    NSMutableArray<NSString *> *integrations = [SentryOptions defaultIntegrations].mutableCopy;
+    [integrations addObject:@"Custom"];
+
+    SentryOptions *options = [self getValidOptions:@{}];
+    options.integrations = integrations;
+
+    NSString *crashIntegration = @"SentryCrashIntegration";
+    NSMutableArray<NSString *> *expected = integrations.mutableCopy;
+    [expected removeObject:crashIntegration];
+
+    [options removeEnabledIntegration:crashIntegration];
+    [self assertArrayEquals:expected actual:options.enabledIntegrations.allObjects];
+}
+
 - (void)testSampleRateWithDict
 {
     NSNumber *sampleRate = @0.1;
@@ -401,6 +425,11 @@
     [self testBooleanField:@"stitchAsyncCode" defaultValue:NO];
 }
 
+- (void)testEnableIOTracking
+{
+    [self testBooleanField:@"enableFileIOTracking" defaultValue:NO];
+}
+
 - (void)testEnableTraceSampling
 {
     SentryOptions *options = [self getValidOptions:@{}];
@@ -460,6 +489,7 @@
         @"urlSessionDelegate" : [NSNull null],
         @"experimentalEnableTraceSampling" : [NSNull null],
         @"enableSwizzling" : [NSNull null],
+        @"enableIOTracking" : [NSNull null],
     }
                                                 didFailWithError:nil];
 
@@ -499,6 +529,7 @@
     XCTAssertNil(options.urlSessionDelegate);
     XCTAssertFalse(options.experimentalEnableTraceSampling);
     XCTAssertEqual(YES, options.enableSwizzling);
+    XCTAssertEqual(NO, options.enableFileIOTracking);
 }
 
 - (void)testSetValidDsn
