@@ -1,8 +1,40 @@
 # Changelog
 
+## 7.13.0
+
+- feat: Add Client Reports (#1733)
+- fix: enableProfiling option via initWithDict (#1743)
+
+## 7.12.0
+
+### Important notice
+
+This release contains a fix for the sampling of transactions. The SDK applied both sample rates for events and transactions when capturing transactions. Previously, when setting sampleRate to 0.0, the SDK would discard all transactions.
+This is fixed now by ignoring the sampleRate for transactions. If you use custom values for sampleRate and traceSampleRate or traceSampler, this change will have an impact on you.
+
+### Various fixes & improvements
+
+- fix: Avoid race condition in SentryCrash (#1735)
+- fix: Possible endless loop for onCrashedLastRun (#1734)
+- fix: Wrongly sampling transactions (#1716)
+- feat: Add flag for UIViewControllerTracking (#1711)
+- feat: Add more info to touch event breadcrumbs (#1724)
+- feat: Add support for profiling on iOS (#1652) by @armcknight
+
+## 7.12.0-beta.0
+
+### Various fixes & improvements
+
+- feat: Add support for profiling on iOS (#1652) by @armcknight
+
+## 7.11.0
+
+- feat: Add CoreData performance tracking (#1682)
+- fix: Detecting ANRs as false OOMs (#1695)
+
 ## 7.10.2
 
-fix: Crash in UIViewControllerSwizzling (#1692)
+- fix: Crash in UIViewControllerSwizzling (#1692)
 
 ## 7.10.1
 
