@@ -57,12 +57,12 @@ SentryANRTrackingIntegration ()
 - (BOOL)shouldBeDisabled:(SentryOptions *)options
 {
     if (!options.enableOutOfMemoryTracking) {
-        return YES;
+        return NO;
     }
 
     // In case the debugger is attached
     if ([self.crashWrapper isBeingTraced]) {
-        return YES;
+        return NO;
     }
 
     return NO;
