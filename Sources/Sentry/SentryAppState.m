@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
         _releaseName = releaseName;
         _osVersion = osVersion;
         _vendorId = vendorId;
-        _isDebugging = isDebugging;
+        _isDebugging = false;
 
         // Round down to seconds as the precision of the serialization of the date is only
         // milliseconds. With this we avoid getting different dates before and after serialization.
