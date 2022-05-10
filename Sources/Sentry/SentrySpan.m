@@ -112,8 +112,7 @@ SentrySpan ()
     [self finishWithStatus:status timestamp:[SentryCurrentDate date]];
 }
 
-- (void)finishWithStatus:(SentrySpanStatus)status
-               timestamp:(nullable NSDate *)timestamp
+- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(nullable NSDate *)timestamp
 {
     self.context.status = status;
     self.timestamp = timestamp ?: [SentryCurrentDate date];
