@@ -2,6 +2,7 @@
 #import "PrivateSentrySDKOnly.h"
 #import "SentryAppStartMeasurement.h"
 #import "SentryClient.h"
+#import "SentryCurrentDate.h"
 #import "SentryFramesTracker.h"
 #import "SentryHub+Private.h"
 #import "SentryLog.h"
@@ -36,6 +37,7 @@ SentryTracer ()
 @property (nonatomic, strong) NSMutableArray<id<SentrySpan>> *children;
 @property (nonatomic, strong) SentryHub *hub;
 @property (nonatomic) SentrySpanStatus finishStatus;
+@property (nonatomic, strong) NSDate *finishTimestamp;
 @property (nonatomic) BOOL isWaitingForChildren;
 
 @end
@@ -247,10 +249,21 @@ static NSLock *profilerLock;
     [self finishWithStatus:kSentrySpanStatusOk];
 }
 
+- (void)finishWithTimestamp:(nullable NSDate *)timestamp
+{
+    [self finishWithStatus:kSentrySpanStatusOk timestamp:timestamp];
+}
+
 - (void)finishWithStatus:(SentrySpanStatus)status
+{
+    [self finishWithStatus:status timestamp:nil];
+}
+
+- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(nullable NSDate *)timestamp
 {
     self.isWaitingForChildren = YES;
     _finishStatus = status;
+    _finishTimestamp = timestamp;
     [self canBeFinished];
 }
 
@@ -281,7 +294,7 @@ static NSLock *profilerLock;
     if (!self.isWaitingForChildren || (_waitForChildren && [self hasUnfinishedChildren]))
         return;
 
-    [_rootSpan finishWithStatus:_finishStatus];
+    [_rootSpan finishWithStatus:_finishStatus timestamp:_finishTimestamp];
 #if SENTRY_TARGET_PROFILING_SUPPORTED
     if ([_hub getClient].options.enableProfiling) {
         [profilerLock lock];

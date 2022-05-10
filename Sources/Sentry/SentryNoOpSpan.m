@@ -78,7 +78,15 @@ NS_ASSUME_NONNULL_BEGIN
 {
 }
 
+- (void)finishWithTimestamp:(nullable NSDate *)timestamp
+{
+}
+
 - (void)finishWithStatus:(SentrySpanStatus)status
+{
+}
+
+- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(nullable NSDate *)timestamp
 {
 }
 
