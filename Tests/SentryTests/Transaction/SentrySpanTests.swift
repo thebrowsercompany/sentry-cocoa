@@ -267,4 +267,21 @@ class SentrySpanTests: XCTestCase {
         group.wait()
         XCTAssertEqual(span.data!.count, outerLoop * innerLoop)
     }
+
+    func testFinishTimestampIsParameterNotCurrent() {
+        let client = TestClient(options: fixture.options)!
+        let span = fixture.getSut(client: client)
+
+        let startTimestamp = TestData.timestamp
+        let finishTimestamp = TestData.timestamp.addingTimeInterval(20)
+        fixture.currentDateProvider.setDate(date: TestData.timestamp.addingTimeInterval(20))
+
+        span.finish(timestamp: finishTimestamp)
+
+        XCTAssertEqual(span.startTimestamp, startTimestamp)
+        XCTAssertEqual(span.timestamp, finishTimestamp)
+        XCTAssertNotEqual(span.timestamp, TestData.timestamp)
+        XCTAssertTrue(span.isFinished)
+        XCTAssertEqual(span.context.status, .ok)
+    }
 }
