@@ -411,10 +411,10 @@ installExceptionHandler()
 
     const task_t thisTask = mach_task_self();
     // This is the default, which breaks widevine:
-    // `exception_mask_t mask = EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC | EXC_MASK_SOFTWARE | EXC_MASK_BREAKPOINT;`
-    // Following is used by chromium's crashpad, which works with widevine
-    // We're not seeing some crashed being picked up by the mach exception handler with this
-    // but they still end up in Sentry via the signal handler.
+    // `exception_mask_t mask = EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC
+    // | EXC_MASK_SOFTWARE | EXC_MASK_BREAKPOINT;` Following is used by chromium's crashpad, which
+    // works with widevine We're not seeing some crashed being picked up by the mach exception
+    // handler with this but they still end up in Sentry via the signal handler.
     exception_mask_t mask = EXC_MASK_CRASH | EXC_MASK_BAD_ACCESS;
 
     SentryCrashLOG_DEBUG("Backing up original exception ports.");
