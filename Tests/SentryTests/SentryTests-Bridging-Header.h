@@ -119,6 +119,8 @@
 #import "SentryScopeObserver.h"
 #import "SentryScopeSyncC.h"
 #import "SentryScreenFrames.h"
+#import "SentryScreenshot.h"
+#import "SentryScreenshotIntegration.h"
 #import "SentrySdkInfo.h"
 #import "SentrySerialization.h"
 #import "SentrySession+Private.h"
@@ -128,6 +130,7 @@
 #import "SentryStacktrace.h"
 #import "SentryStacktraceBuilder.h"
 #import "SentrySubClassFinder.h"
+#import "SentrySwizzleWrapper.h"
 #import "SentrySysctl.h"
 #import "SentrySystemEventBreadcrumbs.h"
 #import "SentryTestIntegration.h"
@@ -143,6 +146,7 @@
 #import "SentryTransport.h"
 #import "SentryTransportAdapter.h"
 #import "SentryTransportFactory.h"
+#import "SentryUIApplication.h"
 #import "SentryUIViewControllerPerformanceTracker.h"
 #import "SentryUIViewControllerSanitizer.h"
 #import "SentryUIViewControllerSwizzling+Test.h"
@@ -157,4 +161,6 @@
 
 #if SENTRY_HAS_UIKIT
 #    import "SentryANRTrackingIntegration.h"
+#    import "SentryUIEventTracker.h"
+#    import "SentryUIEventTrackingIntegration.h"
 #endif

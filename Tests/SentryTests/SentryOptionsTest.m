@@ -493,6 +493,7 @@
         @"enableAutoPerformanceTracking" : [NSNull null],
 #if SENTRY_HAS_UIKIT
         @"enableUIViewControllerTracking" : [NSNull null],
+        @"attachScreenshot" : [NSNull null],
 #endif
         @"enableNetworkTracking" : [NSNull null],
         @"tracesSampleRate" : [NSNull null],
@@ -502,7 +503,8 @@
         @"urlSessionDelegate" : [NSNull null],
         @"experimentalEnableTraceSampling" : [NSNull null],
         @"enableSwizzling" : [NSNull null],
-        @"enableIOTracking" : [NSNull null]
+        @"enableIOTracking" : [NSNull null],
+        @"sdk" : [NSNull null]
     }
                                                 didFailWithError:nil];
 
@@ -536,6 +538,8 @@
     XCTAssertTrue(options.enableAutoPerformanceTracking);
 #if SENTRY_HAS_UIKIT
     XCTAssertTrue(options.enableUIViewControllerTracking);
+    XCTAssertFalse(options.attachScreenshot);
+    XCTAssertEqual(3.0, options.idleTimeout);
 #endif
     XCTAssertEqual(YES, options.enableNetworkTracking);
     XCTAssertNil(options.tracesSampleRate);
@@ -549,6 +553,8 @@
 #if SENTRY_TARGET_PROFILING_SUPPORTED
     XCTAssertEqual(NO, options.enableProfiling);
 #endif
+    XCTAssertEqual(SentryMeta.sdkName, options.sdkInfo.name);
+    XCTAssertEqual(SentryMeta.versionString, options.sdkInfo.version);
 }
 
 - (void)testSetValidDsn
@@ -593,6 +599,48 @@
     XCTAssertEqual(SentryMeta.versionString, options.sdkInfo.version);
 }
 
+- (void)testSetCustomSdkInfo
+{
+    NSDictionary *dict = @{ @"name" : @"custom.sdk", @"version" : @"1.2.3-alpha.0" };
+
+    NSError *error = nil;
+    SentryOptions *options =
+        [[SentryOptions alloc] initWithDict:@{ @"sdk" : dict, @"dsn" : @"https://a:b@c.d/1" }
+                           didFailWithError:&error];
+
+    XCTAssertNil(error);
+    XCTAssertEqual(dict[@"name"], options.sdkInfo.name);
+    XCTAssertEqual(dict[@"version"], options.sdkInfo.version);
+}
+
+- (void)testSetCustomSdkName
+{
+    NSDictionary *dict = @{ @"name" : @"custom.sdk" };
+
+    NSError *error = nil;
+    SentryOptions *options =
+        [[SentryOptions alloc] initWithDict:@{ @"sdk" : dict, @"dsn" : @"https://a:b@c.d/1" }
+                           didFailWithError:&error];
+
+    XCTAssertNil(error);
+    XCTAssertEqual(dict[@"name"], options.sdkInfo.name);
+    XCTAssertEqual(SentryMeta.versionString, options.sdkInfo.version); // default version
+}
+
+- (void)testSetCustomSdkVersion
+{
+    NSDictionary *dict = @{ @"version" : @"1.2.3-alpha.0" };
+
+    NSError *error = nil;
+    SentryOptions *options =
+        [[SentryOptions alloc] initWithDict:@{ @"sdk" : dict, @"dsn" : @"https://a:b@c.d/1" }
+                           didFailWithError:&error];
+
+    XCTAssertNil(error);
+    XCTAssertEqual(SentryMeta.sdkName, options.sdkInfo.name); // default name
+    XCTAssertEqual(dict[@"version"], options.sdkInfo.version);
+}
+
 - (void)testMaxAttachmentSize
 {
     NSNumber *maxAttachmentSize = @21;
@@ -623,6 +671,25 @@
 {
     [self testBooleanField:@"enableUIViewControllerTracking"];
 }
+
+- (void)testAttachScreenshot
+{
+    [self testBooleanField:@"attachScreenshot" defaultValue:NO];
+}
+
+- (void)testEnableUserInteractionTracking
+{
+    [self testBooleanField:@"enableUserInteractionTracing" defaultValue:NO];
+}
+
+- (void)testIdleTimeout
+{
+    NSNumber *idleTimeout = @2.1;
+    SentryOptions *options = [self getValidOptions:@{ @"idleTimeout" : idleTimeout }];
+
+    XCTAssertEqual([idleTimeout doubleValue], options.idleTimeout);
+}
+
 #endif
 
 - (void)testEnableNetworkTracking

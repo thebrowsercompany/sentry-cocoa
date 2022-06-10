@@ -21,7 +21,8 @@ SentryOptions ()
     return @[
         @"SentryCrashIntegration",
 #if SENTRY_HAS_UIKIT
-        @"SentryANRTrackingIntegration",
+        @"SentryANRTrackingIntegration", @"SentryScreenshotIntegration",
+        @"SentryUIEventTrackingIntegration",
 #endif
         @"SentryFramesTrackingIntegration", @"SentryAutoBreadcrumbTrackingIntegration",
         @"SentryAutoSessionTrackingIntegration", @"SentryAppStartTrackingIntegration",
@@ -53,6 +54,9 @@ SentryOptions ()
         self.enableAutoPerformanceTracking = YES;
 #if SENTRY_HAS_UIKIT
         self.enableUIViewControllerTracking = YES;
+        self.attachScreenshot = NO;
+        self.enableUserInteractionTracing = NO;
+        self.idleTimeout = 3.0;
 #endif
         self.enableNetworkTracking = YES;
         self.enableFileIOTracking = NO;
@@ -229,6 +233,16 @@ SentryOptions ()
 #if SENTRY_HAS_UIKIT
     [self setBool:options[@"enableUIViewControllerTracking"]
             block:^(BOOL value) { self->_enableUIViewControllerTracking = value; }];
+
+    [self setBool:options[@"attachScreenshot"]
+            block:^(BOOL value) { self->_attachScreenshot = value; }];
+
+    [self setBool:options[@"enableUserInteractionTracing"]
+            block:^(BOOL value) { self->_enableUserInteractionTracing = value; }];
+
+    if ([options[@"idleTimeout"] isKindOfClass:[NSNumber class]]) {
+        self.idleTimeout = [options[@"idleTimeout"] doubleValue];
+    }
 #endif
 
     [self setBool:options[@"enableNetworkTracking"]
@@ -275,6 +289,12 @@ SentryOptions ()
 
     [self setBool:options[@"sendClientReports"]
             block:^(BOOL value) { self->_sendClientReports = value; }];
+
+    // SentrySdkInfo already expects a dictionary with {"sdk": {"name": ..., "value": ...}}
+    // so we're passing the whole options object.
+    if ([options[@"sdk"] isKindOfClass:[NSDictionary class]]) {
+        _sdkInfo = [[SentrySdkInfo alloc] initWithDict:options orDefaults:_sdkInfo];
+    }
 
     if (nil != error && nil != *error) {
         return NO;

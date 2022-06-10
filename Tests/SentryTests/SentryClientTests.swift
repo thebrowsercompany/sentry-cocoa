@@ -126,7 +126,7 @@ class SentryClientTest: XCTestCase {
             XCTAssertEqual(SentryLevel.info, actual.level)
             XCTAssertEqual(fixture.message, actual.message)
 
-            assertValidDebugMeta(actual: actual.debugMeta)
+            assertValidDebugMeta(actual: actual.debugMeta, forThreads: actual.threads)
             assertValidThreads(actual: actual.threads)
         }
     }
@@ -200,7 +200,7 @@ class SentryClientTest: XCTestCase {
         fixture.getSut().capture(event: event, scope: fixture.scope)
         
         assertLastSentEventWithAttachment { actual in
-            assertValidDebugMeta(actual: actual.debugMeta)
+            assertValidDebugMeta(actual: actual.debugMeta, forThreads: event.threads)
             assertValidThreads(actual: actual.threads)
         }
     }
@@ -214,7 +214,71 @@ class SentryClientTest: XCTestCase {
         
         eventId.assertIsEmpty()
     }
+    
+    func test_AttachmentProcessor_CaptureEvent() {
+        let sut = fixture.getSut()
+        let event = Event()
+        let extraAttachment = Attachment(data: Data(), filename: "ExtraAttachment")
 
+        let expectProcessorCall = expectation(description: "Processor Call")
+        let processor = TestAttachmentProcessor { atts, e in
+            var result = atts ?? []
+            result.append(extraAttachment)
+            XCTAssertEqual(event, e)
+            expectProcessorCall.fulfill()
+            return result
+        }
+        
+        sut.attachmentProcessor = processor
+        sut.capture(event: event)
+        
+        let sendedAttachments = fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.attachments ?? []
+        
+        wait(for: [expectProcessorCall], timeout: 1)
+        XCTAssertEqual(sendedAttachments.count, 1)
+        XCTAssertEqual(extraAttachment, sendedAttachments.first)
+    }
+    
+    func test_AttachmentProcessor_CaptureError_WithSession() {
+        let sut = fixture.getSut()
+        let error = NSError(domain: "test", code: -1)
+        let extraAttachment = Attachment(data: Data(), filename: "ExtraAttachment")
+        
+        let processor = TestAttachmentProcessor { atts, _ in
+            var result = atts ?? []
+            result.append(extraAttachment)
+            return result
+        }
+        
+        sut.attachmentProcessor = processor
+        sut.captureError(error, with: fixture.session, with: Scope())
+        
+        let sentAttachments = fixture.transportAdapter.sentEventsWithSessionTraceState.first?.attachments ?? []
+        
+        XCTAssertEqual(sentAttachments.count, 1)
+        XCTAssertEqual(extraAttachment, sentAttachments.first)
+    }
+    
+    func test_AttachmentProcessor_CaptureError_WithSession_NoReleaseName() {
+        let sut = fixture.getSut()
+        let error = NSError(domain: "test", code: -1)
+        let extraAttachment = Attachment(data: Data(), filename: "ExtraAttachment")
+        
+        let processor = TestAttachmentProcessor { atts, _ in
+            var result = atts ?? []
+            result.append(extraAttachment)
+            return result
+        }
+        
+        sut.attachmentProcessor = processor
+        sut.captureError(error, with: SentrySession(releaseName: ""), with: Scope())
+        
+        let sendedAttachments = fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.attachments ?? []
+        
+        XCTAssertEqual(sendedAttachments.count, 1)
+        XCTAssertEqual(extraAttachment, sendedAttachments.first)
+    }
+    
     func testCaptureEventWithDsnSetAfterwards() {
         let event = Event()
 
@@ -251,7 +315,7 @@ class SentryClientTest: XCTestCase {
         sut.capture(event: event)
         
         assertLastSentEvent { actual in
-            assertValidDebugMeta(actual: actual.debugMeta)
+            assertValidDebugMeta(actual: actual.debugMeta, forThreads: event.threads)
             XCTAssertEqual(event.threads, actual.threads)
         }
     }
@@ -267,7 +331,7 @@ class SentryClientTest: XCTestCase {
         assertLastSentEvent { actual in
             XCTAssertEqual(event.level, actual.level)
             XCTAssertEqual(event.message, actual.message)
-            assertValidDebugMeta(actual: actual.debugMeta)
+            assertValidDebugMeta(actual: actual.debugMeta, forThreads: event.threads)
             assertValidThreads(actual: actual.threads)
         }
     }
@@ -1096,7 +1160,7 @@ class SentryClientTest: XCTestCase {
         XCTAssertEqual(error.domain, mechanism.meta?.error?.domain)
         XCTAssertEqual(error.code, mechanism.meta?.error?.code)
         
-        assertValidDebugMeta(actual: event.debugMeta)
+        assertValidDebugMeta(actual: event.debugMeta, forThreads: event.threads)
         assertValidThreads(actual: event.threads)
     }
     
@@ -1104,7 +1168,7 @@ class SentryClientTest: XCTestCase {
         XCTAssertEqual(SentryLevel.error, event.level)
         XCTAssertEqual(exception.reason, event.exceptions!.first!.value)
         XCTAssertEqual(exception.name.rawValue, event.exceptions!.first!.type)
-        assertValidDebugMeta(actual: event.debugMeta)
+        assertValidDebugMeta(actual: event.debugMeta, forThreads: event.threads)
         assertValidThreads(actual: event.threads)
     }
     
@@ -1122,8 +1186,8 @@ class SentryClientTest: XCTestCase {
         }
     }
     
-    private func assertValidDebugMeta(actual: [DebugMeta]?) {
-        let debugMetas = fixture.debugImageBuilder.getDebugImages()
+    private func assertValidDebugMeta(actual: [DebugMeta]?, forThreads threads: [Sentry.Thread]?) {
+        let debugMetas = fixture.debugImageBuilder.getDebugImages(for: threads ?? [])
         
         XCTAssertEqual(debugMetas, actual ?? [])
     }
@@ -1157,6 +1221,20 @@ class SentryClientTest: XCTestCase {
         case testIsFailing
         case somethingElse
     }
+    
+    class TestAttachmentProcessor: NSObject, SentryClientAttachmentProcessor {
+        
+        var callback: (([Attachment]?, Event) -> [Attachment]?)
+        
+        init(callback: @escaping ([Attachment]?, Event) -> [Attachment]?) {
+            self.callback = callback
+        }
+        
+        func processAttachments(_ attachments: [Attachment]?, for event: Event) -> [Attachment]? {
+            return callback(attachments, event)
+        }
+    }
+    
 }
 
 // swiftlint:enable file_length
