@@ -1,6 +1,46 @@
 # Changelog
 
+## 7.16.0
+
+### Features
+
+- UI event transactions for clicks (#1784)
+- Collect queue label information for profiles (#1828)
+- Use the macho format for debug information in Profiling (#1830)
+- Allow partial SDK info override (#1816)
+
+### Fixes
+
+- Hub uses its scope (#1821)
+
+## 7.15.0
+
+### Features
+
+- Add profile data category for rate limiting (#1799)
+- Allow setting SDK info with Options initWithDict (#1793)
+- Remove ViewController name match for swizzling (#1802)
+
+### Fixes
+
+- Apply patch for SentryCrashCachedData (#1790)
+- Fix getting class data mask in SentryCrash (#1788)
+- Use pod_target_xcconfig for Podspec #1792
+- Case sensitive header import error (#1794)
+- Parsing of output from backtrace_symbols() (#1782)
+
+## 7.14.0
+
+- fix: User feedback crash (#1766)
+- feat: Attach screenshots for errors (#1751)
+- fix: Remove authenticated pointer stripping for iOS backtraces (#1757)
+- perf: Filter binary images on Sentry Crash (#1767)
+- fix: NSURL warning during SDK initialization (#1764)
+
 ## 7.13.0
+
+If you are using self-hosted Sentry, this version requires Sentry version >= [21.9.0](https://github.com/getsentry/relay/blob/master/CHANGELOG.md#2190)
+to work or you have to manually disable sending client reports via the `sendClientReports` option.
 
 - feat: Add Client Reports (#1733)
 - fix: enableProfiling option via initWithDict (#1743)
@@ -11,6 +51,8 @@
 
 This release contains a fix for the sampling of transactions. The SDK applied both sample rates for events and transactions when capturing transactions. Previously, when setting sampleRate to 0.0, the SDK would discard all transactions.
 This is fixed now by ignoring the sampleRate for transactions. If you use custom values for sampleRate and traceSampleRate or traceSampler, this change will have an impact on you.
+
+If you are using profiling and self-hosted Sentry, this version requires Sentry version >= [22.3.0](https://github.com/getsentry/relay/releases/tag/22.3.0).
 
 ### Various fixes & improvements
 
@@ -44,7 +86,7 @@ This is fixed now by ignoring the sampleRate for transactions. If you use custom
 
 ## 7.10.0
 
-- fix: Always tracks App start for Hybrid SDKs (#1662) 
+- fix: Always tracks App start for Hybrid SDKs (#1662)
 - feat: Send SDK integrations (#1647)
 - fix: Don't track OOMs for unit tests (#1651)
 - fix: Add verification for vendor UUID in OOM logic (#1648)
