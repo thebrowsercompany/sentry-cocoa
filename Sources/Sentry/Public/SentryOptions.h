@@ -286,13 +286,6 @@ NS_SWIFT_NAME(Options)
 @property (nullable, nonatomic, weak) id<NSURLSessionDelegate> urlSessionDelegate;
 
 /**
- * Controls if the `tracestate` header is attached to envelopes and HTTP client integrations.
- *
- * Note: this is an experimental API and will be removed without notice.
- */
-@property (nonatomic) BOOL experimentalEnableTraceSampling;
-
-/**
  * Wether the SDK should use swizzling or not. Default is YES.
  *
  * @discussion When turned off the following features are disabled: breadcrumbs for touch events and
@@ -327,6 +320,20 @@ NS_SWIFT_NAME(Options)
  * @see <https://develop.sentry.dev/sdk/client-reports/>
  */
 @property (nonatomic, assign) BOOL sendClientReports;
+
+/**
+ * When enabled, the SDK tracks when the application stops responding for a specific amount of
+ * time defined by the `appHangsTimeoutInterval` option.
+ */
+@property (nonatomic, assign) BOOL enableAppHangTracking;
+
+/**
+ * The minimum amount of time an app should be unresponsive to be classified as an App Hanging.
+ * The actual amount may be a little longer.
+ * Avoid using values lower than 100ms, which may cause a lot of app hangs events being transmitted.
+ * The default value is 2 seconds.
+ */
+@property (nonatomic, assign) NSTimeInterval appHangTimeoutInterval;
 
 @end
 

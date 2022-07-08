@@ -1,4 +1,5 @@
 #import "SentryOptions.h"
+#import "SentryANRTracker.h"
 #import "SentryDsn.h"
 #import "SentryLog.h"
 #import "SentryMeta.h"
@@ -58,13 +59,15 @@ SentryOptions ()
         self.enableUserInteractionTracing = NO;
         self.idleTimeout = 3.0;
 #endif
+        self.enableAppHangTracking = NO;
+        self.appHangTimeoutInterval = 2.0;
+
         self.enableNetworkTracking = YES;
         self.enableFileIOTracking = NO;
         self.enableNetworkBreadcrumbs = YES;
         _defaultTracesSampleRate = nil;
         self.tracesSampleRate = _defaultTracesSampleRate;
         self.enableCoreDataTracking = NO;
-        _experimentalEnableTraceSampling = NO;
         _enableSwizzling = YES;
 #if SENTRY_TARGET_PROFILING_SUPPORTED
         self.enableProfiling = NO;
@@ -243,7 +246,15 @@ SentryOptions ()
     if ([options[@"idleTimeout"] isKindOfClass:[NSNumber class]]) {
         self.idleTimeout = [options[@"idleTimeout"] doubleValue];
     }
+
 #endif
+
+    [self setBool:options[@"enableAppHangTracking"]
+            block:^(BOOL value) { self->_enableAppHangTracking = value; }];
+
+    if ([options[@"appHangTimeoutInterval"] isKindOfClass:[NSNumber class]]) {
+        self.appHangTimeoutInterval = [options[@"appHangTimeoutInterval"] doubleValue];
+    }
 
     [self setBool:options[@"enableNetworkTracking"]
             block:^(BOOL value) { self->_enableNetworkTracking = value; }];
@@ -272,9 +283,6 @@ SentryOptions ()
     if ([options[@"urlSessionDelegate"] conformsToProtocol:@protocol(NSURLSessionDelegate)]) {
         self.urlSessionDelegate = options[@"urlSessionDelegate"];
     }
-
-    [self setBool:options[@"experimentalEnableTraceSampling"]
-            block:^(BOOL value) { self->_experimentalEnableTraceSampling = value; }];
 
     [self setBool:options[@"enableSwizzling"]
             block:^(BOOL value) { self->_enableSwizzling = value; }];

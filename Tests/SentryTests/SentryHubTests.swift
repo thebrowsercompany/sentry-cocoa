@@ -1,3 +1,4 @@
+import Sentry
 import XCTest
 
 class SentryHubTests: XCTestCase {
@@ -241,6 +242,28 @@ class SentryHubTests: XCTestCase {
         XCTAssertEqual(tracer.name, fixture.transactionName)
         XCTAssertEqual(customSamplingContext?["customKey"] as? String, "customValue")
         XCTAssertEqual(span.context.operation, fixture.transactionOperation)
+    }
+    
+    func testStartTransaction_checkContextSampleRate_fromOptions() {
+        let options = fixture.options
+        options.tracesSampleRate = 0.49
+        
+        let span = fixture.getSut().startTransaction(transactionContext: TransactionContext(name: fixture.transactionName, operation: fixture.transactionOperation), customSamplingContext: ["customKey": "customValue"])
+        let context = span.context as? TransactionContext
+        
+        XCTAssertEqual(context?.sampleRate, 0.49)
+    }
+    
+    func testStartTransaction_checkContextSampleRate_fromSampler() {
+        let options = fixture.options
+        options.tracesSampler = {  _ -> NSNumber in
+            return NSNumber(value: 0.51)
+        }
+        
+        let span = fixture.getSut().startTransaction(transactionContext: TransactionContext(name: fixture.transactionName, operation: fixture.transactionOperation), customSamplingContext: ["customKey": "customValue"])
+        let context = span.context as? TransactionContext
+        
+        XCTAssertEqual(context?.sampleRate, 0.51)
     }
     
     func testStartTransactionNotSamplingUsingSampleRate() {
@@ -702,7 +725,7 @@ class SentryHubTests: XCTestCase {
         modifyEventDict(&eventDict)
         
         let eventData = try JSONSerialization.data(withJSONObject: eventDict)
-        return SentryEnvelope(header: SentryEnvelopeHeader(id: event.eventId, traceState: nil), items: [SentryEnvelopeItem(header: envelopeItem.header, data: eventData)])
+        return SentryEnvelope(header: SentryEnvelopeHeader(id: event.eventId, traceContext: nil), items: [SentryEnvelopeItem(header: envelopeItem.header, data: eventData)])
     }
     
     private func advanceTime(bySeconds: TimeInterval) {
@@ -734,12 +757,14 @@ class SentryHubTests: XCTestCase {
         let arguments = fixture.client.captureEventWithScopeInvocations
         XCTAssertEqual(1, arguments.count)
         XCTAssertEqual(fixture.event, arguments.first?.event)
+        XCTAssertFalse(arguments.first?.event.isCrashEvent ?? true)
     }
     
     private func assertCrashEventSent() {
         let arguments = fixture.client.captureCrashEventInvocations
         XCTAssertEqual(1, arguments.count)
         XCTAssertEqual(fixture.event, arguments.first?.event)
+        XCTAssertTrue(arguments.first?.event.isCrashEvent ?? false)
     }
 
     private func assertEventSentWithSession() {
@@ -809,11 +834,12 @@ class SentryHubTests: XCTestCase {
         XCTAssertEqual(firstImage["type"] as! String, "macho")
         
         let sampledProfile = profile["sampled_profile"] as! [String: Any]
-        let threadMetadata = sampledProfile["thread_metadata"] as! [String: Any]
+        let threadMetadata = sampledProfile["thread_metadata"] as! [String: [String: Any]]
         let queueMetadata = sampledProfile["queue_metadata"] as! [String: Any]
         
         XCTAssertFalse(threadMetadata.isEmpty)
-        XCTAssertGreaterThan((threadMetadata.first?.value as! [String: Any])["priority"] as! Int, 0)
+        XCTAssertGreaterThan(threadMetadata.first?.value["priority"] as! Int, 0)
+        XCTAssertFalse(threadMetadata.values.filter { $0["is_main_thread"] as? Bool == true }.isEmpty)
         XCTAssertFalse(queueMetadata.isEmpty)
         XCTAssertFalse(((queueMetadata.first?.value as! [String: Any])["label"] as! String).isEmpty)
         

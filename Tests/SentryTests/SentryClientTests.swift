@@ -169,6 +169,27 @@ class SentryClientTest: XCTestCase {
         }
     }
     
+    func testCaptureEventWithScope_SerializedTagsAndExtraShouldMatch() {
+        let event = Event(level: SentryLevel.warning)
+        event.message = fixture.message
+        let scope = Scope()
+        let expectedTags = ["tagKey": "tagValue"]
+        let expectedExtra = ["extraKey": "extraValue"]
+        scope.setTags(expectedTags)
+        scope.setExtras(expectedExtra)
+        
+        let eventId = fixture.getSut().capture(event: event, scope: scope)
+        
+        eventId.assertIsNotEmpty()
+        assertLastSentEvent { actual in
+            let serializedEvent = actual.serialize()
+            let tags = try! XCTUnwrap(serializedEvent["tags"] as? [String: String])
+            let extra = try! XCTUnwrap(serializedEvent["extra"] as? [String: String])
+            XCTAssertEqual(expectedTags, tags)
+            XCTAssertEqual(expectedExtra, extra)
+        }
+    }
+        
     func testCaptureEventTypeTransactionDoesNotIncludeThreadAndDebugMeta() {
         let event = Event(level: SentryLevel.warning)
         event.message = fixture.message
@@ -1018,18 +1039,9 @@ class SentryClientTest: XCTestCase {
     func testCaptureTransactionEvent_sendTraceState() {
         let transaction = fixture.transaction
         let client = fixture.getSut()
-        client.options.experimentalEnableTraceSampling = true
         client.capture(event: transaction)
         
-        XCTAssertNotNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceState)
-    }
-    
-    func testCaptureTransactionEvent_dontSendTraceState() {
-        let transaction = fixture.transaction
-        let client = fixture.getSut()
-        client.capture(event: transaction)
-        
-        XCTAssertNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceState)
+        XCTAssertNotNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceContext)
     }
     
     func testCaptureEvent_traceInScope_sendTraceState() {
@@ -1039,12 +1051,11 @@ class SentryClientTest: XCTestCase {
         scope.span = fixture.trace
         
         let client = fixture.getSut()
-        client.options.experimentalEnableTraceSampling = true
         client.capture(event: event, scope: scope)
         
         client.capture(event: event)
         
-        XCTAssertNotNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceState)
+        XCTAssertNotNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceContext)
     }
     
     func testCaptureEvent_traceInScope_dontSendTraceState() {
@@ -1058,7 +1069,7 @@ class SentryClientTest: XCTestCase {
         
         client.capture(event: event)
         
-        XCTAssertNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceState)
+        XCTAssertNil(fixture.transportAdapter.sendEventWithTraceStateInvocations.first?.traceContext)
     }
     
     func testCaptureEvent_withAdditionalEnvelopeItem() {
@@ -1129,10 +1140,10 @@ class SentryClientTest: XCTestCase {
         }
     }
     
-    private func assertLastSentEventWithSession(assert: (Event, SentrySession, SentryTraceState?) -> Void) {
+    private func assertLastSentEventWithSession(assert: (Event, SentrySession, SentryTraceContext?) -> Void) {
         XCTAssertNotNil(fixture.transportAdapter.sentEventsWithSessionTraceState.last)
         if let args = fixture.transportAdapter.sentEventsWithSessionTraceState.last {
-            assert(args.event, args.session, args.traceState)
+            assert(args.event, args.session, args.traceContext)
         }
     }
     

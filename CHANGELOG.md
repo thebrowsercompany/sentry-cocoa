@@ -1,5 +1,64 @@
 # Changelog
 
+## 7.20.0
+
+### Features
+
+- Add screenshot at crash (#1920)
+- Track timezone changes as breadcrumbs (#1930)
+- Add sample rate in the baggage header, remove Userid and Transaction (#1936)
+
+## 7.19.0
+
+### Features
+
+- Add main thread ID to profiling payload (#1918)
+- Add App Hangs tracking (#1906)
+
+### Fixes
+
+- Remove WebKit optimization check (#1921)
+- Detect prewarmed starts with env variable (#1927)
+
+## 7.18.1
+
+### Fixes
+
+- Fix high percentage of slow frames (#1915)
+
+## 7.18.0
+
+### Features
+ 
+- Replace tracestate header with baggage (#1867)
+
+### Fixes
+
+- Discard long-lasting auto-generated transactions (#1903)
+- Unset scope span when finishing idle transaction (#1902)
+- Set max app start duration to 60s (#1899)
+- Screenshot wrongly attached in crash events (#1901)
+
+## 7.17.0
+
+### Features
+
+- Implement description for SentryBreadcrumb (#1880)
+
+### Fixes
+
+- Propagate configured SDK info from options to events (#1853)
+- Stop reporting pre warmed app starts (#1896)
+
+## 7.16.1
+
+
+### Fixes
+
+- Fix reporting wrong OOM when starting SDK twice (#1878)
+- Fix JSON conversion error message (#1856)
+- Transaction tag and data serialization (#1826)
+
 ## 7.16.0
 
 ### Features

@@ -1,3 +1,6 @@
+#import "SentryANRTracker.h"
+#import "SentryDefaultCurrentDateProvider.h"
+#import "SentryDispatchQueueWrapper.h"
 #import "SentryUIApplication.h"
 #import <Foundation/Foundation.h>
 #import <SentryAppStateManager.h>
@@ -43,16 +46,25 @@ static NSObject *sentryDependencyContainerLock;
     }
 }
 
+- (SentryFileManager *)fileManager
+{
+    @synchronized(sentryDependencyContainerLock) {
+        if (_fileManager == nil) {
+            _fileManager = [[[SentrySDK currentHub] getClient] fileManager];
+        }
+        return _fileManager;
+    }
+}
+
 - (SentryAppStateManager *)appStateManager
 {
     @synchronized(sentryDependencyContainerLock) {
         if (_appStateManager == nil) {
-            SentryFileManager *fileManager = [[[SentrySDK currentHub] getClient] fileManager];
             SentryOptions *options = [[[SentrySDK currentHub] getClient] options];
             _appStateManager = [[SentryAppStateManager alloc]
                     initWithOptions:options
                        crashWrapper:self.crashWrapper
-                        fileManager:fileManager
+                        fileManager:self.fileManager
                 currentDateProvider:[SentryDefaultCurrentDateProvider sharedInstance]
                              sysctl:[[SentrySysctl alloc] init]];
         }
@@ -155,6 +167,23 @@ static NSObject *sentryDependencyContainerLock;
     }
 
     return _debugImageProvider;
+}
+
+- (SentryANRTracker *)getANRTracker:(NSTimeInterval)timeout
+{
+    if (_anrTracker == nil) {
+        @synchronized(sentryDependencyContainerLock) {
+            if (_anrTracker == nil) {
+                _anrTracker = [[SentryANRTracker alloc]
+                    initWithTimeoutInterval:timeout
+                        currentDateProvider:[SentryDefaultCurrentDateProvider sharedInstance]
+                               crashWrapper:self.crashWrapper
+                       dispatchQueueWrapper:[[SentryDispatchQueueWrapper alloc] init]
+                              threadWrapper:self.threadWrapper];
+            }
+        }
+    }
+    return _anrTracker;
 }
 
 @end

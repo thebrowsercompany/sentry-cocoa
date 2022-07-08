@@ -3,7 +3,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SentryHub, SentryTransactionContext, SentryTraceHeader, SentryTraceState,
+@class SentryHub, SentryTransactionContext, SentryTraceHeader, SentryTraceContext,
     SentryDispatchQueueWrapper;
 
 static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
@@ -45,9 +45,9 @@ static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
 @property (readonly) BOOL waitForChildren;
 
 /**
- * Retrieves a trace state from this tracer.
+ * Retrieves a trace context from this tracer.
  */
-@property (nonatomic, readonly) SentryTraceState *traceState;
+@property (nonatomic, readonly) SentryTraceContext *traceContext;
 
 /*
  The root span of this tracer.

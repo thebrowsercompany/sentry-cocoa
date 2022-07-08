@@ -8,6 +8,7 @@
 #import "NSURLProtocolSwizzle.h"
 #import "PrivateSentrySDKOnly.h"
 #import "SentryANRTracker.h"
+#import "SentryANRTrackingIntegration.h"
 #import "SentryAppStartMeasurement.h"
 #import "SentryAppStartTracker.h"
 #import "SentryAppStartTrackingIntegration.h"
@@ -17,6 +18,7 @@
 #import "SentryAutoBreadcrumbTrackingIntegration+Test.h"
 #import "SentryAutoBreadcrumbTrackingIntegration.h"
 #import "SentryAutoSessionTrackingIntegration.h"
+#import "SentryBaggage.h"
 #import "SentryBreadcrumbTracker.h"
 #import "SentryByteCountFormatter.h"
 #import "SentryClassRegistrator.h"
@@ -67,6 +69,7 @@
 #import "SentryEnvelope+Private.h"
 #import "SentryEnvelopeItemType.h"
 #import "SentryEnvelopeRateLimit.h"
+#import "SentryEvent+Private.h"
 #import "SentryFileContents.h"
 #import "SentryFileIOTrackingIntegration.h"
 #import "SentryFileManager+TestProperties.h"
@@ -138,7 +141,7 @@
 #import "SentryThread.h"
 #import "SentryThreadInspector.h"
 #import "SentryThreadWrapper.h"
-#import "SentryTraceState.h"
+#import "SentryTraceContext.h"
 #import "SentryTracer+Test.h"
 #import "SentryTracer.h"
 #import "SentryTransaction+Private.h"
@@ -160,7 +163,6 @@
 #import "URLSessionTaskMock.h"
 
 #if SENTRY_HAS_UIKIT
-#    import "SentryANRTrackingIntegration.h"
 #    import "SentryUIEventTracker.h"
 #    import "SentryUIEventTrackingIntegration.h"
 #endif
