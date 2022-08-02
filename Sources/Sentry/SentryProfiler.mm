@@ -9,11 +9,13 @@
 #    import "SentryDependencyContainer.h"
 #    import "SentryEnvelope.h"
 #    import "SentryEnvelopeItemType.h"
+#    import "SentryFramesTracker.h"
 #    import "SentryHexAddressFormatter.h"
 #    import "SentryId.h"
 #    import "SentryLog.h"
 #    import "SentryProfilingLogging.hpp"
 #    import "SentrySamplingProfiler.hpp"
+#    import "SentryScreenFrames.h"
 #    import "SentrySerialization.h"
 #    import "SentryTime.h"
 #    import "SentryTransaction.h"
@@ -129,7 +131,8 @@ isSimulatorBuild()
         _profile = [NSMutableDictionary<NSString *, id> dictionary];
         const auto sampledProfile = [NSMutableDictionary<NSString *, id> dictionary];
         const auto samples = [NSMutableArray<NSDictionary<NSString *, id> *> array];
-        const auto threadMetadata = [NSMutableDictionary<NSString *, NSDictionary *> dictionary];
+        const auto threadMetadata =
+            [NSMutableDictionary<NSString *, NSMutableDictionary *> dictionary];
         const auto queueMetadata = [NSMutableDictionary<NSString *, NSDictionary *> dictionary];
         sampledProfile[@"samples"] = samples;
         sampledProfile[@"thread_metadata"] = threadMetadata;
@@ -150,17 +153,20 @@ isSimulatorBuild()
                 if (backtrace.queueMetadata.address != 0) {
                     queueAddress = sentry_formatHexAddress(@(backtrace.queueMetadata.address));
                 }
-                if (threadMetadata[threadID] == nil) {
-                    const auto metadata = [NSMutableDictionary<NSString *, id> dictionary];
-                    if (!backtrace.threadMetadata.name.empty()) {
-                        metadata[@"name"] =
-                            [NSString stringWithUTF8String:backtrace.threadMetadata.name.c_str()];
-                    }
-                    metadata[@"priority"] = @(backtrace.threadMetadata.priority);
+                NSMutableDictionary<NSString *, id> *metadata = threadMetadata[threadID];
+                if (metadata == nil) {
+                    metadata = [NSMutableDictionary<NSString *, id> dictionary];
                     if (backtrace.threadMetadata.threadID == mainThreadID) {
                         metadata[@"is_main_thread"] = @YES;
                     }
                     threadMetadata[threadID] = metadata;
+                }
+                if (!backtrace.threadMetadata.name.empty() && metadata[@"name"] == nil) {
+                    metadata[@"name"] =
+                        [NSString stringWithUTF8String:backtrace.threadMetadata.name.c_str()];
+                }
+                if (backtrace.threadMetadata.priority != -1 && metadata[@"priority"] == nil) {
+                    metadata[@"priority"] = @(backtrace.threadMetadata.priority);
                 }
                 if (queueAddress != nil && queueMetadata[queueAddress] == nil
                     && backtrace.queueMetadata.label != nullptr) {
@@ -208,6 +214,7 @@ isSimulatorBuild()
 }
 
 - (SentryEnvelopeItem *)buildEnvelopeItemForTransaction:(SentryTransaction *)transaction
+                                              frameInfo:(SentryScreenFrames *)frameInfo
 {
     NSMutableDictionary<NSString *, id> *profile = nil;
     @synchronized(self) {
@@ -253,6 +260,39 @@ isSimulatorBuild()
     profile[@"version_code"] = [bundle objectForInfoDictionaryKey:(NSString *)kCFBundleVersionKey];
     profile[@"version_name"] = [bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
 
+#    if SENTRY_HAS_UIKIT
+    auto relativeFrameTimestampsNs = [NSMutableArray array];
+    [frameInfo.frameTimestamps enumerateObjectsUsingBlock:^(
+        NSDictionary<NSString *, NSNumber *> *_Nonnull obj, NSUInteger idx, BOOL *_Nonnull stop) {
+        const auto begin = (uint64_t)(obj[@"start_timestamp"].doubleValue * 1e9);
+        if (begin < _startTimestamp) {
+            return;
+        }
+        const auto end = (uint64_t)(obj[@"end_timestamp"].doubleValue * 1e9);
+        [relativeFrameTimestampsNs addObject:@{
+            @"start_timestamp_relative_ns" : @(getDurationNs(_startTimestamp, begin)),
+            @"end_timestamp_relative_ns" : @(getDurationNs(_startTimestamp, end)),
+        }];
+    }];
+    profile[@"adverse_frame_render_timestamps"] = relativeFrameTimestampsNs;
+
+    relativeFrameTimestampsNs = [NSMutableArray array];
+    [frameInfo.frameRateTimestamps enumerateObjectsUsingBlock:^(
+        NSDictionary<NSString *, NSNumber *> *_Nonnull obj, NSUInteger idx, BOOL *_Nonnull stop) {
+        const auto timestamp = (uint64_t)(obj[@"timestamp"].doubleValue * 1e9);
+        const auto refreshRate = obj[@"frame_rate"];
+        uint64_t relativeTimestamp = 0;
+        if (timestamp >= _startTimestamp) {
+            relativeTimestamp = getDurationNs(_startTimestamp, timestamp);
+        }
+        [relativeFrameTimestampsNs addObject:@{
+            @"start_timestamp_relative_ns" : @(relativeTimestamp),
+            @"frame_rate" : refreshRate,
+        }];
+    }];
+    profile[@"screen_frame_rates"] = relativeFrameTimestampsNs;
+#    endif // SENTRY_HAS_UIKIT
+
     NSError *error = nil;
     const auto JSONData = [SentrySerialization dataWithJSONObject:profile error:&error];
     if (JSONData == nil) {
@@ -266,6 +306,11 @@ isSimulatorBuild()
     const auto header = [[SentryEnvelopeItemHeader alloc] initWithType:SentryEnvelopeItemTypeProfile
                                                                 length:JSONData.length];
     return [[SentryEnvelopeItem alloc] initWithHeader:header data:JSONData];
+}
+
+- (BOOL)isRunning
+{
+    return _profiler->isSampling();
 }
 
 @end

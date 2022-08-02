@@ -1,5 +1,53 @@
 # Changelog
 
+## 7.23.0
+
+### Features
+
+- Add sampling configuration for profiling (#2004)
+- Add transaction to baggage and trace headers (#1992)
+
+### Fixes
+
+- Log empty samples instead of collecting stacks for idle threads (#2013)
+- Remove logging that could occur while a thread is suspended (#2014)
+- Handle failure to read thread priority gracefully (#2015)
+- Fix address sanitizer compilation error (#1996)
+
+## 7.22.0
+
+### Features
+
+- Read free_memory when the event is captured, not only at SDK startup (#1962)
+- Provide private access to SentryOptions for hybrid SDKs (#1991)
+
+### Fixes
+
+- Remove Sentry keys from cached HTTP request headers (#1975)
+- Collect samples for idle threads in iOS profiler (#1978)
+- Don't override already-set timestamp when finishing Span (#1993)
+- Respect existing baggage header instead of overwriting it (#1995)
+
+## 7.21.0
+
+### Features
+
+- Enhance the UIViewController breadcrumbs with more data (#1945)
+- feat: Add extra app start span (#1952)
+- Add enableAutoBreadcrumbTracking option (#1958)
+- Automatic nest spans with the UI life cycle (#1959)
+- Upload frame rendering timestamps to correlate to sampled backtraces (#1910)
+- Remove PII from auto-generated core data spans (#1982)
+
+### Fixes
+
+- Don't track OOMs for simulators (#1970)
+- Properly sanitize the event context and SDK information (#1943)
+- Don't send error 429 as `network_error` (#1957)
+- Sanitize Span data (#1963)
+- Deprecate not needed option `sdkInfo` (#1960)
+- Crash in profiling logger (#1964)
+
 ## 7.20.0
 
 ### Features
@@ -29,7 +77,7 @@
 ## 7.18.0
 
 ### Features
- 
+
 - Replace tracestate header with baggage (#1867)
 
 ### Fixes

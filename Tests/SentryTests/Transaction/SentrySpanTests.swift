@@ -63,6 +63,27 @@ class SentrySpanTests: XCTestCase {
         XCTAssertEqual(lastEvent.startTimestamp, TestData.timestamp)
         XCTAssertEqual(lastEvent.type, SentryEnvelopeItemTypeTransaction)
     }
+
+    func testFinishSpanWithDefaultTimestamp() {
+        let span = SentrySpan(transaction: fixture.tracer, context: SpanContext(operation: fixture.someOperation, sampled: .undecided))
+        span.finish()
+
+        XCTAssertEqual(span.startTimestamp, TestData.timestamp)
+        XCTAssertEqual(span.timestamp, TestData.timestamp)
+        XCTAssertTrue(span.isFinished)
+        XCTAssertEqual(span.context.status, .ok)
+    }
+
+    func testFinishSpanWithCustomTimestamp() {
+        let span = SentrySpan(transaction: fixture.tracer, context: SpanContext(operation: fixture.someOperation, sampled: .undecided))
+        span.timestamp = Date(timeIntervalSince1970: 123)
+        span.finish()
+
+        XCTAssertEqual(span.startTimestamp, TestData.timestamp)
+        XCTAssertEqual(span.timestamp, Date(timeIntervalSince1970: 123))
+        XCTAssertTrue(span.isFinished)
+        XCTAssertEqual(span.context.status, .ok)
+    }
     
     func testFinishWithStatus() {
         let span = fixture.getSut()
@@ -155,6 +176,26 @@ class SentrySpanTests: XCTestCase {
         XCTAssertNotNil(serialization["tags"])
         XCTAssertEqual((serialization["data"] as! Dictionary)[fixture.extraKey], fixture.extraValue)
         XCTAssertEqual((serialization["tags"] as! Dictionary)[fixture.extraKey], fixture.extraValue)
+    }
+
+    func testSanitizeData() {
+        let span = fixture.getSut()
+
+        span.setExtra(value: Date(timeIntervalSince1970: 10), key: "date")
+        span.finish()
+
+        let serialization = span.serialize()
+        XCTAssertEqual((serialization["data"] as! Dictionary)["date"], "1970-01-01T00:00:10.000Z")
+    }
+
+    func testSanitizeDataSpan() {
+        let span = SentrySpan(transaction: fixture.tracer, context: SpanContext(operation: fixture.someOperation, sampled: .undecided))
+
+        span.setExtra(value: Date(timeIntervalSince1970: 10), key: "date")
+        span.finish()
+
+        let serialization = span.serialize()
+        XCTAssertEqual((serialization["data"] as! Dictionary)["date"], "1970-01-01T00:00:10.000Z")
     }
     
     func testSerialization_WithNoDataAndTag() {
