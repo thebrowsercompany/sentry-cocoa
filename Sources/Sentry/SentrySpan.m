@@ -103,17 +103,7 @@ SentrySpan ()
     [self finishWithStatus:kSentrySpanStatusOk];
 }
 
-- (void)finishWithTimestamp:(nullable NSDate *)timestamp
-{
-    [self finishWithStatus:kSentrySpanStatusOk timestamp:timestamp];
-}
-
 - (void)finishWithStatus:(SentrySpanStatus)status
-{
-    [self finishWithStatus:status timestamp:[SentryCurrentDate date]];
-}
-
-- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(nullable NSDate *)timestamp
 {
     self.context.status = status;
     if (self.timestamp == nil) {

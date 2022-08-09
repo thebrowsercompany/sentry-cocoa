@@ -93,29 +93,11 @@ NS_SWIFT_NAME(Span)
 - (void)finish;
 
 /**
- * Finishes the span by setting the end time to the provided value.
- *
- * @param timestamp The timestamp at which the span ended, if null then value of
- * `+[SentryCurrentDate date]` used
- */
-- (void)finishWithTimestamp:(nullable NSDate *)timestamp NS_SWIFT_NAME(finish(timestamp:));
-
-/**
  * Finishes the span by setting the end time and span status.
  *
  * @param status The status of this span
  *  */
 - (void)finishWithStatus:(SentrySpanStatus)status NS_SWIFT_NAME(finish(status:));
-
-/**
- * Finishes the span by setting the end time and span status.
- *
- * @param status The status of this span
- * @param timestamp The timestamp at which the span ended, if null then value of
- * `+[SentryCurrentDate date]` used
- *  */
-- (void)finishWithStatus:(SentrySpanStatus)status
-               timestamp:(nullable NSDate *)timestamp NS_SWIFT_NAME(finish(status:timestamp:));
 
 /**
  * Returns the trace information that could be sent as a sentry-trace header.
