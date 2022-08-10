@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Report App Memory Usage (#2027)
+- Include app permissions with event (#1984)
+- Add culture context to event (#2036)
+- Attach view hierarchy to events (#2044)
+- Clean up SentryOptions: added `enableCrashHandler` and deprecated `integrations` (#2049)
+
+### Fix
+
+- Add span finish flag (#2059)
+
 ## 7.23.0
 
 ### Features
