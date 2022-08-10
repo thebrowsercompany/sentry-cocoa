@@ -63,6 +63,28 @@ class SentrySpanTests: XCTestCase {
         XCTAssertEqual(lastEvent.startTimestamp, TestData.timestamp)
         XCTAssertEqual(lastEvent.type, SentryEnvelopeItemTypeTransaction)
     }
+    
+    func testFinish_Custom_Timestamp() {
+        let client = TestClient(options: fixture.options)!
+        let span = fixture.getSut(client: client)
+        
+        let finishDate = Date(timeIntervalSinceNow: 6)
+        
+        span.timestamp = finishDate
+        
+        span.finish()
+        
+        XCTAssertEqual(span.startTimestamp, TestData.timestamp)
+        XCTAssertEqual(span.timestamp, finishDate)
+        XCTAssertTrue(span.isFinished)
+        XCTAssertEqual(span.context.status, .ok)
+        
+        let lastEvent = client.captureEventWithScopeInvocations.invocations[0].event
+        XCTAssertEqual(lastEvent.transaction, fixture.someTransaction)
+        XCTAssertEqual(lastEvent.timestamp, finishDate)
+        XCTAssertEqual(lastEvent.startTimestamp, TestData.timestamp)
+        XCTAssertEqual(lastEvent.type, SentryEnvelopeItemTypeTransaction)
+    }
 
     func testFinishSpanWithDefaultTimestamp() {
         let span = SentrySpan(transaction: fixture.tracer, context: SpanContext(operation: fixture.someOperation, sampled: .undecided))
@@ -307,25 +329,5 @@ class SentrySpanTests: XCTestCase {
         queue.activate()
         group.wait()
         XCTAssertEqual(span.data!.count, outerLoop * innerLoop)
-    }
-
-    func testFinishTimestampIsParameterNotCurrent() {
-        let client = TestClient(options: fixture.options)!
-        let span = fixture.getSut(client: client)
-
-        let startTimestamp = TestData.timestamp
-        // Set finish time to after the start time
-        let finishTimestamp = TestData.timestamp.addingTimeInterval(20)
-        // Set "current date" to even later than the finish time
-        fixture.currentDateProvider.setDate(date: TestData.timestamp.addingTimeInterval(40))
-
-        span.finish(timestamp: finishTimestamp)
-
-        XCTAssertEqual(span.startTimestamp?.timeIntervalSince1970, startTimestamp.timeIntervalSince1970)
-        XCTAssertEqual(span.timestamp?.timeIntervalSince1970, finishTimestamp.timeIntervalSince1970)
-        XCTAssertNotEqual(span.startTimestamp?.timeIntervalSince1970, span.timestamp?.timeIntervalSince1970)
-        XCTAssertNotEqual(span.timestamp?.timeIntervalSince1970, fixture.currentDateProvider.date().timeIntervalSince1970)
-        XCTAssertTrue(span.isFinished)
-        XCTAssertEqual(span.context.status, .ok)
     }
 }

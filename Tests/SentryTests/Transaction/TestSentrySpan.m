@@ -39,14 +39,6 @@
 {
 }
 
-- (void)finishWithTimestamp:(NSDate *)timestamp
-{
-}
-
-- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(NSDate *)timestamp
-{
-}
-
 - (void)removeDataForKey:(nonnull NSString *)key
 {
 }

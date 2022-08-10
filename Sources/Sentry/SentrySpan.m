@@ -15,6 +15,7 @@ SentrySpan ()
 @implementation SentrySpan {
     NSMutableDictionary<NSString *, id> *_data;
     NSMutableDictionary<NSString *, id> *_tags;
+    BOOL _isFinished;
 }
 
 - (instancetype)initWithTransaction:(SentryTracer *)transaction context:(SentrySpanContext *)context
@@ -25,6 +26,7 @@ SentrySpan ()
         self.startTimestamp = [SentryCurrentDate date];
         _data = [[NSMutableDictionary alloc] init];
         _tags = [[NSMutableDictionary alloc] init];
+        _isFinished = NO;
     }
     return self;
 }
@@ -95,7 +97,7 @@ SentrySpan ()
 
 - (BOOL)isFinished
 {
-    return self.timestamp != nil;
+    return _isFinished;
 }
 
 - (void)finish
@@ -103,19 +105,10 @@ SentrySpan ()
     [self finishWithStatus:kSentrySpanStatusOk];
 }
 
-- (void)finishWithTimestamp:(nullable NSDate *)timestamp
-{
-    [self finishWithStatus:kSentrySpanStatusOk timestamp:timestamp];
-}
-
 - (void)finishWithStatus:(SentrySpanStatus)status
 {
-    [self finishWithStatus:status timestamp:[SentryCurrentDate date]];
-}
-
-- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(nullable NSDate *)timestamp
-{
     self.context.status = status;
+    _isFinished = YES;
     if (self.timestamp == nil) {
         self.timestamp = [SentryCurrentDate date];
     }

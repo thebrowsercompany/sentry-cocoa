@@ -41,7 +41,6 @@ SentryTracer ()
 @property (nonatomic, strong) SentrySpan *rootSpan;
 @property (nonatomic, strong) SentryHub *hub;
 @property (nonatomic) SentrySpanStatus finishStatus;
-@property (nonatomic, strong) NSDate *finishTimestamp;
 @property (nonatomic) BOOL isWaitingForChildren;
 @property (nonatomic) NSTimeInterval idleTimeout;
 @property (nonatomic, nullable, strong) SentryDispatchQueueWrapper *dispatchQueueWrapper;
@@ -396,21 +395,10 @@ static NSLock *profilerLock;
     [self finishWithStatus:kSentrySpanStatusOk];
 }
 
-- (void)finishWithTimestamp:(nullable NSDate *)timestamp
-{
-    [self finishWithStatus:kSentrySpanStatusOk timestamp:timestamp];
-}
-
 - (void)finishWithStatus:(SentrySpanStatus)status
-{
-    [self finishWithStatus:status timestamp:nil];
-}
-
-- (void)finishWithStatus:(SentrySpanStatus)status timestamp:(nullable NSDate *)timestamp
 {
     self.isWaitingForChildren = YES;
     _finishStatus = status;
-    _finishTimestamp = timestamp;
 
     [self cancelIdleTimeout];
     [self canBeFinished];
@@ -453,7 +441,7 @@ static NSLock *profilerLock;
 
 - (void)finishInternal
 {
-    [_rootSpan finishWithStatus:_finishStatus timestamp:_finishTimestamp];
+    [_rootSpan finishWithStatus:_finishStatus];
 
     if (self.finishCallback) {
         self.finishCallback(self);
