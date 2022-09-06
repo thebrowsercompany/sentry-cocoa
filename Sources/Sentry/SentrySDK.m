@@ -8,6 +8,7 @@
 #import "SentryHub+Private.h"
 #import "SentryLog.h"
 #import "SentryMeta.h"
+#import "SentryOptions+Private.h"
 #import "SentryScope.h"
 
 @interface
@@ -24,6 +25,15 @@ static SentryHub *_Nullable currentHub;
 static BOOL crashedLastRunCalled;
 static SentryAppStartMeasurement *sentrySDKappStartMeasurement;
 static NSObject *sentrySDKappStartMeasurementLock;
+
+/**
+ * @brief We need to keep track of the number of times @c +[startWith...] is called, because our OOM
+ * reporting breaks if it's called more than once.
+ * @discussion This doesn't just protect from multiple sequential calls to start the SDK, so we
+ * can't simply @c dispatch_once the logic inside the start method; there is also a valid workflow
+ * where a consumer could start the SDK, then call @c +[close] and then start again, and we want to
+ * reenable the integrations.
+ */
 static NSUInteger startInvocations;
 
 + (void)initialize
@@ -183,14 +193,37 @@ static NSUInteger startInvocations;
 
 + (id<SentrySpan>)startTransactionWithName:(NSString *)name operation:(NSString *)operation
 {
-    return [SentrySDK.currentHub startTransactionWithName:name operation:operation];
+    return [self startTransactionWithName:name
+                               nameSource:kSentryTransactionNameSourceCustom
+                                operation:operation];
+}
+
++ (id<SentrySpan>)startTransactionWithName:(NSString *)name
+                                nameSource:(SentryTransactionNameSource)source
+                                 operation:(NSString *)operation
+{
+    return [SentrySDK.currentHub startTransactionWithName:name
+                                               nameSource:source
+                                                operation:operation];
 }
 
 + (id<SentrySpan>)startTransactionWithName:(NSString *)name
                                  operation:(NSString *)operation
                                bindToScope:(BOOL)bindToScope
 {
+    return [self startTransactionWithName:name
+                               nameSource:kSentryTransactionNameSourceCustom
+                                operation:operation
+                              bindToScope:bindToScope];
+}
+
++ (id<SentrySpan>)startTransactionWithName:(NSString *)name
+                                nameSource:(SentryTransactionNameSource)source
+                                 operation:(NSString *)operation
+                               bindToScope:(BOOL)bindToScope
+{
     return [SentrySDK.currentHub startTransactionWithName:name
+                                               nameSource:source
                                                 operation:operation
                                               bindToScope:bindToScope];
 }
@@ -355,11 +388,14 @@ static NSUInteger startInvocations;
             continue;
         }
         id<SentryIntegrationProtocol> integrationInstance = [[integrationClass alloc] init];
-        [integrationInstance installWithOptions:options];
-        [SentryLog
-            logWithMessage:[NSString stringWithFormat:@"Integration installed: %@", integrationName]
-                  andLevel:kSentryLevelDebug];
-        [SentrySDK.currentHub.installedIntegrations addObject:integrationInstance];
+        BOOL shouldInstall = [integrationInstance installWithOptions:options];
+        if (shouldInstall) {
+            [SentryLog logWithMessage:[NSString stringWithFormat:@"Integration installed: %@",
+                                                integrationName]
+                             andLevel:kSentryLevelDebug];
+            [SentrySDK.currentHub.installedIntegrations addObject:integrationInstance];
+            [SentrySDK.currentHub.installedIntegrationNames addObject:integrationName];
+        }
     }
 }
 
