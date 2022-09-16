@@ -1,6 +1,25 @@
 # Changelog
 
 ## Unreleased
+## 7.25.1
+
+### Fixes
+
+- Prewarmed app start detection (#2151)
+
+## 7.25.0
+
+### Features
+
+- Users can customise the error description shown in the Sentry UI by providing an NSDebugDescriptionErrorKey value in the error user info dictionary. (#2120)
+- Add support for dynamic library (#1726)
+
+### Fixes
+
+- Can't find app image when swizzling (#2124)
+- Crash with screenshot is reported twice (#2134)
+- Setting SDK name through `options[sdk][name]` shouldn't clear version (#2139)
+
 ## 7.24.1
 
 ### Fixes
