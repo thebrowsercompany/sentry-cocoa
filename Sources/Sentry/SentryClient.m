@@ -221,7 +221,16 @@ NSString *const kSentryDefaultEnvironment = @"production";
 {
     SentryEvent *event = [[SentryEvent alloc] initWithError:error];
 
-    NSString *exceptionValue = [NSString stringWithFormat:@"Code: %ld", (long)error.code];
+    NSString *exceptionValue;
+
+    // If the error has a debug description, use that.
+    NSString *customExceptionValue = [[error userInfo] valueForKey:NSDebugDescriptionErrorKey];
+    if (customExceptionValue != nil) {
+        exceptionValue =
+            [NSString stringWithFormat:@"%@ (Code: %ld)", customExceptionValue, (long)error.code];
+    } else {
+        exceptionValue = [NSString stringWithFormat:@"Code: %ld", (long)error.code];
+    }
     SentryException *exception = [[SentryException alloc] initWithValue:exceptionValue
                                                                    type:error.domain];
 
@@ -459,6 +468,10 @@ NSString *const kSentryDefaultEnvironment = @"production";
                           isCrashEvent:(BOOL)isCrashEvent
 {
     NSParameterAssert(event);
+    if (event == nil) {
+        return nil;
+    }
+
     if ([self isDisabled]) {
         [self logDisabledMessage];
         return nil;

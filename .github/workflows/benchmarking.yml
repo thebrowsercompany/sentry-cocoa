@@ -1,16 +1,7 @@
 name: Benchmarking
 on:
-  schedule:
-    - cron: '0 0 * * *' # every night at midnight UTC
-  push:
-    branches:
-      - master
-
   pull_request:
     paths:
-        # test changes to Sentry SDK sources
-      - 'Sources/**'
-
         # test changes to benchmarking implementation
       - 'Samples/iOS-Swift/iOS-Swift/**'
       - 'Samples/iOS-Swift/PerformanceBenchmarks/**'
@@ -23,7 +14,7 @@ on:
 jobs:
   build-benchmark-test-target:
     name: Build app and test runner
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
       - run: ./scripts/ci-select-xcode.sh
@@ -99,7 +90,7 @@ jobs:
 
   app-metrics:
     name: Collect app metrics
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - name: Git checkout
         uses: actions/checkout@v3
