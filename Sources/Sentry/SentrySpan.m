@@ -2,6 +2,8 @@
 #import "NSDate+SentryExtras.h"
 #import "NSDictionary+SentrySanitize.h"
 #import "SentryCurrentDate.h"
+#import "SentryLog.h"
+#import "SentryMeasurementValue.h"
 #import "SentryNoOpSpan.h"
 #import "SentryTraceHeader.h"
 #import "SentryTracer.h"
@@ -86,6 +88,16 @@ SentrySpan ()
     @synchronized(_tags) {
         [_tags removeObjectForKey:key];
     }
+}
+
+- (void)setMeasurement:(NSString *)name value:(NSNumber *)value
+{
+    [self.tracer setMeasurement:name value:value];
+}
+
+- (void)setMeasurement:(NSString *)name value:(NSNumber *)value unit:(SentryMeasurementUnit *)unit
+{
+    [self.tracer setMeasurement:name value:value unit:unit];
 }
 
 - (NSDictionary<NSString *, id> *)tags

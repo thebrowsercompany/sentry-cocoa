@@ -235,7 +235,7 @@ class SentryNetworkTrackerTests: XCTestCase {
         setTaskState(task, state: .completed)
         XCTAssertTrue(spans!.first!.isFinished)
     }
-    
+
     func testTaskWithoutCurrentRequest() {
         let request = URLRequest(url: SentryNetworkTrackerTests.testURL)
         let task = URLSessionUnsupportedTaskMock(request: request)
@@ -448,61 +448,7 @@ class SentryNetworkTrackerTests: XCTestCase {
         assertOneSpanCreated(transaction)
     }
     
-    func test_AddTraceHeader() {
-        let sut = fixture.getSut()
-        SentrySDK.currentHub().scope.span = SentryTracer(transactionContext: TransactionContext(name: "SomeTransaction", operation: "SomeOperation"), hub: nil)
-        let headers = sut.addTraceHeader([:])
-        XCTAssertEqual(headers?.count, 2)
-        XCTAssertNotNil(headers?["baggage"])
-        XCTAssertNotNil(headers?["sentry-trace"])
-
-        let decodedBaggage = SentrySerialization.decodeBaggage(headers?["baggage"] ?? "")
-        XCTAssertEqual(decodedBaggage.count, 5)
-    }
-
-    func test_AddTraceHeader_AppendOriginalBaggage() {
-        let sut = fixture.getSut()
-        SentrySDK.currentHub().scope.span = SentryTracer(transactionContext: TransactionContext(name: "SomeTransaction", operation: "SomeOperation"), hub: nil)
-        let headers = sut.addTraceHeader(["baggage": "key1=value"])
-        XCTAssertEqual(headers?.count, 2)
-        XCTAssertNotNil(headers?["baggage"])
-        XCTAssertNotNil(headers?["sentry-trace"])
-
-        let decodedBaggage = SentrySerialization.decodeBaggage(headers?["baggage"] ?? "")
-        XCTAssertEqual(decodedBaggage.count, 6)
-    }
-
-    func test_RemoveExistingTraceHeader_WhenNoSpan() {
-        let sut = fixture.getSut()
-        let headers = sut.addTraceHeader(["a": "a", "baggage": "key=value,sentry-trace_id=sentry-trace_id,sentry-release=abc", "sentry-trace": "sentry-trace"])
-        XCTAssertEqual(headers?.count, 2)
-        XCTAssertEqual(headers?["baggage"], "key=value")
-        XCTAssertNil(headers?["sentry-trace"])
-    }
-
-    func test_RemoveExistingTraceHeader_WhenNoSpan_NoEmptyBaggage() {
-        let sut = fixture.getSut()
-        let headers = sut.addTraceHeader(["a": "a", "baggage": "sentry-trace_id=sentry-trace_id,sentry-release=abc", "sentry-trace": "sentry-trace"])
-        XCTAssertEqual(headers?.count, 1)
-        XCTAssertNil(headers?["baggage"])
-        XCTAssertNil(headers?["sentry-trace"])
-    }
-    
-    func test_AddTraceHeader_NoTransaction() {
-        let sut = fixture.getSut()
-        let headers = sut.addTraceHeader([:])
-        XCTAssertEqual(headers?.count, 0)
-    }
-    
-    func test_AddTraceHeader_TrackingDisabled() {
-        let sut = fixture.getSut()
-        sut.disable()
-        let headers = sut.addTraceHeader([:])
-        
-        XCTAssertEqual(headers?.count, 0)
-    }
-    
-    // Altough we only run this test above the below specified versions, we exped the
+    // Although we only run this test above the below specified versions, we expect the
     // implementation to be thread safe
     @available(tvOS 10.0, *)
     @available(OSX 10.12, *)
@@ -530,7 +476,7 @@ class SentryNetworkTrackerTests: XCTestCase {
         assertOneSpanCreated(transaction)
     }
     
-    // Altough we only run this test above the below specified versions, we exped the
+    // Although we only run this test above the below specified versions, we expect the
     // implementation to be thread safe
     @available(tvOS 10.0, *)
     @available(OSX 10.12, *)
@@ -562,6 +508,97 @@ class SentryNetworkTrackerTests: XCTestCase {
         XCTAssertTrue(span.isFinished)
         //Test if it has observers. Nil means no observers
         XCTAssertNil(task.observationInfo)
+    }
+
+    func testBaggageHeader() {
+        let sut = fixture.getSut()
+        let task = createDataTask()
+        let transaction = startTransaction() as! SentryTracer
+        sut.urlSessionTaskResume(task)
+
+        let expectedBaggageHeader = transaction.traceContext.toBaggage().toHTTPHeader()
+        XCTAssertEqual(task.currentRequest?.allHTTPHeaderFields?["baggage"] ?? "", expectedBaggageHeader)
+    }
+
+    func testTraceHeader() {
+        let sut = fixture.getSut()
+        let task = createDataTask()
+        let transaction = startTransaction() as! SentryTracer
+        sut.urlSessionTaskResume(task)
+
+        let children = Dynamic(transaction).children as [SentrySpan]?
+        let networkSpan = children![0]
+        let expectedTraceHeader = networkSpan.toTraceHeader().value()
+        XCTAssertEqual(task.currentRequest?.allHTTPHeaderFields?["sentry-trace"] ?? "", expectedTraceHeader)
+    }
+
+    func testNoHeadersWhenDisabled() {
+        let sut = fixture.getSut()
+        sut.disable()
+
+        let task = createDataTask()
+        _ = startTransaction() as! SentryTracer
+        sut.urlSessionTaskResume(task)
+
+        XCTAssertNil(task.currentRequest?.allHTTPHeaderFields?["baggage"])
+        XCTAssertNil(task.currentRequest?.allHTTPHeaderFields?["sentry-trace"])
+    }
+
+    func testNoHeadersWhenNoTransaction() {
+        let sut = fixture.getSut()
+        let task = createDataTask()
+        sut.urlSessionTaskResume(task)
+
+        XCTAssertNil(task.currentRequest?.allHTTPHeaderFields?["baggage"])
+        XCTAssertNil(task.currentRequest?.allHTTPHeaderFields?["sentry-trace"])
+    }
+
+    func testNoHeadersForWrongUrl() {
+        fixture.options.tracePropagationTargets = ["www.example.com"]
+
+        let sut = fixture.getSut()
+        let task = createDataTask()
+        _ = startTransaction() as! SentryTracer
+        sut.urlSessionTaskResume(task)
+
+        XCTAssertNil(task.currentRequest?.allHTTPHeaderFields?["baggage"])
+        XCTAssertNil(task.currentRequest?.allHTTPHeaderFields?["sentry-trace"])
+    }
+
+    func testAddHeadersForRequestWithURL() {
+        // Default: all urls
+        let sut = fixture.getSut()
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://localhost")!))
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/api/projects")!))
+
+        // Strings: hostname
+        fixture.options.tracePropagationTargets = ["localhost"]
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://localhost")!))
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://localhost-but-not-really")!)) // works because of `contains`
+        XCTAssertFalse(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/api/projects")!))
+
+        fixture.options.tracePropagationTargets = ["www.example.com"]
+        XCTAssertFalse(sut.addHeadersForRequest(with: URL(string: "http://localhost")!))
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/api/projects")!))
+        XCTAssertFalse(sut.addHeadersForRequest(with: URL(string: "http://api.example.com/api/projects")!))
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://www.example.com.evil.com/api/projects")!)) // works because of `contains`
+
+        // Test regex
+        let regex = try! NSRegularExpression(pattern: "http://www.example.com/api/.*")
+        fixture.options.tracePropagationTargets = [regex]
+        XCTAssertFalse(sut.addHeadersForRequest(with: URL(string: "http://localhost")!))
+        XCTAssertFalse(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/url")!))
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/api/projects")!))
+
+        // Regex and string
+        fixture.options.tracePropagationTargets = ["localhost", regex]
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://localhost")!))
+        XCTAssertFalse(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/url")!))
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://www.example.com/api/projects")!))
+
+        // String and integer (which isn't valid, make sure it doesn't crash)
+        fixture.options.tracePropagationTargets = ["localhost", 123]
+        XCTAssertTrue(sut.addHeadersForRequest(with: URL(string: "http://localhost")!))
     }
     
     func setTaskState(_ task: URLSessionTaskMock, state: URLSessionTask.State) {
@@ -609,6 +646,7 @@ class SentryNetworkTrackerTests: XCTestCase {
     private func assertCompletedSpan(_ task: URLSessionDataTaskMock, _ span: Span) {
         XCTAssertNotNil(span)
         XCTAssertFalse(span.isFinished)
+        XCTAssertEqual(task.currentRequest?.value(forHTTPHeaderField: SENTRY_TRACE_HEADER), span.toTraceHeader().value())
         setTaskState(task, state: .completed)
         XCTAssertTrue(span.isFinished)
 

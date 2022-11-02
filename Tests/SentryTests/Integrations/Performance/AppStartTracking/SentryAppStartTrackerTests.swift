@@ -1,7 +1,7 @@
 import XCTest
 
 #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
-class SentryAppStartTrackerTests: XCTestCase {
+class SentryAppStartTrackerTests: NotificationCenterTestCase {
     
     private static let dsnAsString = TestConstants.dsnAsString(username: "SentryAppStartTrackerTests")
     private static let dsn = TestConstants.dsn(username: "SentryAppStartTrackerTests")
@@ -14,6 +14,7 @@ class SentryAppStartTrackerTests: XCTestCase {
         let fileManager: SentryFileManager
         let crashWrapper = TestSentryCrashWrapper.sharedInstance()
         let appStateManager: SentryAppStateManager
+        let dispatchQueue = TestSentryDispatchQueueWrapper()
         
         let appStartDuration: TimeInterval = 0.4
         var runtimeInitTimestamp: Date
@@ -26,7 +27,7 @@ class SentryAppStartTrackerTests: XCTestCase {
             
             fileManager = try! SentryFileManager(options: options, andCurrentDateProvider: currentDate)
             
-            appStateManager = SentryAppStateManager(options: options, crashWrapper: crashWrapper, fileManager: fileManager, currentDateProvider: currentDate, sysctl: sysctl)
+            appStateManager = SentryAppStateManager(options: options, crashWrapper: crashWrapper, fileManager: fileManager, currentDateProvider: currentDate, sysctl: sysctl, dispatchQueueWrapper: dispatchQueue)
             
             runtimeInitTimestamp = currentDate.date().addingTimeInterval(0.2)
             didFinishLaunchingTimestamp = currentDate.date().addingTimeInterval(0.3)
@@ -55,7 +56,7 @@ class SentryAppStartTrackerTests: XCTestCase {
         fixture.fileManager.deleteAllFolders()
         clearTestState()
     }
-    
+
     func testFirstStart_IsColdStart() {
         startApp()
         
@@ -74,7 +75,8 @@ class SentryAppStartTrackerTests: XCTestCase {
     
     func testSecondStart_SystemNotRebooted_IsWarmStart() {
         givenSystemNotRebooted()
-        
+
+        fixture.fileManager.moveAppStateToPreviousAppState()
         startApp()
         
         assertValidStart(type: .warm)
@@ -109,7 +111,8 @@ class SentryAppStartTrackerTests: XCTestCase {
         
         let appState = SentryAppState(releaseName: "1.0.0", osVersion: "14.4.1", vendorId: TestData.someUUID, isDebugging: false, systemBootTimestamp: self.fixture.currentDate.date())
         givenPreviousAppState(appState: appState)
-        
+
+        fixture.fileManager.moveAppStateToPreviousAppState()
         startApp()
         
         assertValidStart(type: .warm)
@@ -121,7 +124,8 @@ class SentryAppStartTrackerTests: XCTestCase {
     func testAppLaunches_PreviousBootTimeInFuture_NoAppStartUp() {
         let appState = SentryAppState(releaseName: TestData.appState.releaseName, osVersion: UIDevice.current.systemVersion, vendorId: TestData.someUUID, isDebugging: false, systemBootTimestamp: fixture.currentDate.date().addingTimeInterval(1))
         givenPreviousAppState(appState: appState)
-        
+
+        fixture.fileManager.moveAppStateToPreviousAppState()
         startApp()
         
         assertNoAppStartUp()
@@ -131,7 +135,8 @@ class SentryAppStartTrackerTests: XCTestCase {
         setenv("ActivePrewarm", "1", 1)
         SentryAppStartTracker.load()
         givenSystemNotRebooted()
-        
+
+        fixture.fileManager.moveAppStateToPreviousAppState()
         startApp()
         
 #if os(iOS)
@@ -149,7 +154,8 @@ class SentryAppStartTrackerTests: XCTestCase {
         setenv("ActivePrewarm", "0", 1)
         SentryAppStartTracker.load()
         givenSystemNotRebooted()
-        
+
+        fixture.fileManager.moveAppStateToPreviousAppState()
         startApp()
         
         assertValidStart(type: .warm)
@@ -173,7 +179,7 @@ class SentryAppStartTrackerTests: XCTestCase {
         sut = fixture.sut
         sut.start()
         
-        TestNotificationCenter.didEnterBackground()
+        didEnterBackground()
         
         assertNoAppStartUp()
     }
@@ -181,7 +187,7 @@ class SentryAppStartTrackerTests: XCTestCase {
     func testAppLaunchesBackgroundTask_GoesToForeground_NoAppStartUp() {
         sut = fixture.sut
         sut.start()
-        TestNotificationCenter.didEnterBackground()
+        didEnterBackground()
         
         goToForeground()
         
@@ -197,17 +203,17 @@ class SentryAppStartTrackerTests: XCTestCase {
         sut = fixture.sut
         givenRuntimeInitTimestamp(sut: sut)
         
-        TestNotificationCenter.willEnterForeground()
+        willEnterForeground()
         
         givenDidFinishLaunchingTimestamp()
         
-        TestNotificationCenter.didFinishLaunching()
+        didFinishLaunching()
         
         sut.start()
         
         advanceTime(bySeconds: 0.1)
-        TestNotificationCenter.uiWindowDidBecomeVisible()
-        TestNotificationCenter.didBecomeActive()
+        uiWindowDidBecomeVisible()
+        didBecomeActive()
         
         assertValidStart(type: .cold)
     }
@@ -220,7 +226,8 @@ class SentryAppStartTrackerTests: XCTestCase {
     
     func testHybridSDKs_SecondStart_SystemNotRebooted_IsWarmStart() {
         givenSystemNotRebooted()
-        
+
+        fixture.fileManager.moveAppStateToPreviousAppState()
         hybridAppStart()
         
         assertValidHybridStart(type: .warm)
@@ -258,14 +265,14 @@ class SentryAppStartTrackerTests: XCTestCase {
         givenRuntimeInitTimestamp(sut: sut)
         sut.start()
         
-        TestNotificationCenter.willEnterForeground()
+        willEnterForeground()
         
         givenDidFinishLaunchingTimestamp()
         
-        TestNotificationCenter.didFinishLaunching()
+        didFinishLaunching()
         advanceTime(bySeconds: 0.1)
-        TestNotificationCenter.uiWindowDidBecomeVisible()
-        TestNotificationCenter.didBecomeActive()
+        uiWindowDidBecomeVisible()
+        didBecomeActive()
     }
     
     private func hybridAppStart() {
@@ -276,7 +283,7 @@ class SentryAppStartTrackerTests: XCTestCase {
         advanceTime(bySeconds: 0.2)
         fixture.runtimeInitTimestamp = fixture.currentDate.date()
         
-        TestNotificationCenter.willEnterForeground()
+        willEnterForeground()
         
         advanceTime(bySeconds: 0.3)
         fixture.didFinishLaunchingTimestamp = fixture.currentDate.date()
@@ -284,30 +291,19 @@ class SentryAppStartTrackerTests: XCTestCase {
         sut = fixture.sut
         Dynamic(sut).setRuntimeInit(fixture.runtimeInitTimestamp)
         
-        TestNotificationCenter.didFinishLaunching()
+        didFinishLaunching()
         
         advanceTime(bySeconds: 0.1)
-        TestNotificationCenter.uiWindowDidBecomeVisible()
-        TestNotificationCenter.didBecomeActive()
+        uiWindowDidBecomeVisible()
+        didBecomeActive()
         
         // The Hybrid SDKs call start after all the notifications are posted,
         // because they init the SentrySDK when the hybrid engine is ready.
         sut.start()
     }
     
-    private func goToForeground() {
-        TestNotificationCenter.willEnterForeground()
-        TestNotificationCenter.uiWindowDidBecomeVisible()
-        TestNotificationCenter.didBecomeActive()
-    }
-    
-    private func goToBackground() {
-        TestNotificationCenter.willResignActive()
-        TestNotificationCenter.didEnterBackground()
-    }
-    
-    private func terminateApp() {
-        TestNotificationCenter.willTerminate()
+    internal override func terminateApp() {
+        super.terminateApp()
         sut.stop()
     }
     

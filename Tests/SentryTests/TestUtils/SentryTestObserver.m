@@ -6,6 +6,7 @@
 #import "SentryCurrentDate.h"
 #import "SentryDefaultCurrentDateProvider.h"
 #import "SentryHub.h"
+#import "SentryLog+TestInit.h"
 #import "SentryOptions.h"
 #import "SentryScope.h"
 #import "SentrySdk+Private.h"
@@ -26,11 +27,16 @@ SentryTestObserver ()
 
 @implementation SentryTestObserver
 
-#if TESTCI
+#if defined(TESTCI)
 + (void)load
 {
     [[XCTestObservationCenter sharedTestObservationCenter]
         addTestObserver:[[SentryTestObserver alloc] init]];
+}
+#elif defined(TEST)
++ (void)load
+{
+    [SentryLog configure:YES diagnosticLevel:kSentryLevelDebug];
 }
 #endif
 
@@ -46,11 +52,16 @@ SentryTestObserver ()
 
         // The SentryCrashIntegration enriches the scope. We need to install the integration
         // once to get the scope data.
-        [SentrySDK startWithOptionsObject:options];
 
-        self.scope = [[SentryScope alloc] init];
-        [SentryCrashIntegration enrichScope:self.scope
-                               crashWrapper:[SentryCrashWrapper sharedInstance]];
+        // When running the SentryTestObserver the code gets stuck when accessing the
+        // UIScreen.mainScreen in SentryCrashIntegration. We disable adding extra context for now.
+        // Ideally we somehow check here if we can access UIScreen.mainScreen, see
+        // https://github.com/getsentry/sentry-cocoa/issues/2284
+        //        [SentrySDK startWithOptionsObject:options];
+        //
+        //        self.scope = [[SentryScope alloc] init];
+        //        [SentryCrashIntegration enrichScope:self.scope
+        //                               crashWrapper:[SentryCrashWrapper sharedInstance]];
 
         self.options = options;
     }

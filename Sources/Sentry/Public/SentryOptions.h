@@ -3,7 +3,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SentryDsn, SentrySdkInfo;
+@class SentryDsn, SentrySdkInfo, SentryMeasurementValue;
 
 NS_SWIFT_NAME(Options)
 @interface SentryOptions : NSObject
@@ -71,8 +71,12 @@ NS_SWIFT_NAME(Options)
 @property (nonatomic, assign) NSUInteger maxBreadcrumbs;
 
 /**
- * When enabled, the SDK adds breadcrumbs for each network request. Default value is YES.
- * As this feature uses swizzling, disabling enableSwizzling also disables this feature.
+ * When enabled, the SDK adds breadcrumbs for each network request. Default value is
+ * <code>YES</code>. As this feature uses swizzling, disabling <code>enableSwizzling</code> also
+ * disables this feature.
+ *
+ * @discussion If you want to enable or disable network tracking for performance monitoring, please
+ * use <code>enableNetworkTracking</code> instead.
  */
 @property (nonatomic, assign) BOOL enableNetworkBreadcrumbs;
 
@@ -235,15 +239,15 @@ NS_SWIFT_NAME(Options)
 #endif
 
 /**
- * When enabled, the SDK adds breadcrumbs for HTTP requests and tracks performance for HTTP
- * requests if auto performance tracking and enableSwizzling are enabled. The default is
- * <code>YES</code>.
+ * When enabled, the SDK tracks performance for HTTP requests if auto performance tracking and
+ * enableSwizzling are enabled. The default is <code>YES</code>.
+ *
+ * @discussion If you want to enable or disable network breadcrumbs, please use
+ * <code>enableNetworkBreadcrumbs</code> instead.
  */
 @property (nonatomic, assign) BOOL enableNetworkTracking;
 
 /**
- * This feature is EXPERIMENTAL.
- *
  * When enabled, the SDK tracks performance for file IO reads and writes with NSData if auto
  * performance tracking and enableSwizzling are enabled. The default is <code>NO</code>.
  */
@@ -315,8 +319,6 @@ NS_SWIFT_NAME(Options)
 @property (nonatomic, assign) BOOL enableSwizzling;
 
 /**
- * This feature is experimental.
- *
  * When enabled, the SDK tracks the performance of Core Data operations. It requires enabling
  * performance monitoring. The default is <code>NO</code>.
  * @see <https://docs.sentry.io/platforms/apple/performance/>
@@ -394,6 +396,19 @@ NS_SWIFT_NAME(Options)
  * When enabled, the SDK adds breadcrumbs for various system events. Default value is YES.
  */
 @property (nonatomic, assign) BOOL enableAutoBreadcrumbTracking;
+
+/**
+ * An array of hosts or regexes that determines if outgoing HTTP requests will get
+ * extra `trace_id` and `baggage` headers added.
+ *
+ * This array can contain instances of NSString which should match the URL (using `contains`),
+ * and instances of NSRegularExpression, which will be used to check the whole URL.
+ *
+ * The default value adds the header to all outgoing requests.
+ *
+ * @see https://docs.sentry.io/platforms/apple/configuration/options/#trace-propagation-targets
+ */
+@property (nonatomic, retain) NSArray *tracePropagationTargets;
 
 @end
 

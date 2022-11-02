@@ -258,10 +258,11 @@ getBasePath()
     COPY_PRIMITIVE(parentProcessID);
     COPY_STRING(deviceAppHash);
     COPY_STRING(buildType);
-    COPY_PRIMITIVE(storageSize);
+    COPY_PRIMITIVE(totalStorageSize);
+    COPY_PRIMITIVE(freeStorageSize);
     COPY_PRIMITIVE(memorySize);
-    COPY_PRIMITIVE(freeMemory);
-    COPY_PRIMITIVE(usableMemory);
+    COPY_PRIMITIVE(freeMemorySize);
+    COPY_PRIMITIVE(usableMemorySize);
 
     return dict;
 }
