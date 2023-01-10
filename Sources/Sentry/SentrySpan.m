@@ -5,6 +5,8 @@
 #import "SentryLog.h"
 #import "SentryMeasurementValue.h"
 #import "SentryNoOpSpan.h"
+#import "SentrySpanId.h"
+#import "SentryTime.h"
 #import "SentryTraceHeader.h"
 #import "SentryTracer.h"
 
@@ -23,6 +25,8 @@ SentrySpan ()
 - (instancetype)initWithTracer:(SentryTracer *)tracer context:(SentrySpanContext *)context
 {
     if (self = [super init]) {
+        SENTRY_LOG_DEBUG(@"Created span %@ for trace ID %@", context.spanId.sentrySpanIdString,
+            tracer.context.traceId);
         _tracer = tracer;
         _context = context;
         self.startTimestamp = [SentryCurrentDate date];
@@ -42,6 +46,7 @@ SentrySpan ()
                               description:(nullable NSString *)description
 {
     if (self.tracer == nil) {
+        SENTRY_LOG_DEBUG(@"No tracer, returning no-op span");
         return [SentryNoOpSpan shared];
     }
 
@@ -123,6 +128,8 @@ SentrySpan ()
     _isFinished = YES;
     if (self.timestamp == nil) {
         self.timestamp = [SentryCurrentDate date];
+        SENTRY_LOG_DEBUG(@"Setting span timestamp: %@ at system time %llu", self.timestamp,
+            (unsigned long long)getAbsoluteTime());
     }
     if (self.tracer != nil) {
         [self.tracer spanFinished:self];

@@ -7,16 +7,26 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol SentryFileManagerDelegate;
 
-@class SentryEvent, SentryOptions, SentryEnvelope, SentryFileContents, SentryAppState;
+@class SentryEvent, SentryOptions, SentryEnvelope, SentryFileContents, SentryAppState,
+    SentryDispatchQueueWrapper;
 
 NS_SWIFT_NAME(SentryFileManager)
 @interface SentryFileManager : NSObject
 SENTRY_NO_INIT
 
 @property (nonatomic, readonly) NSString *sentryPath;
+@property (nonatomic, readonly) NSString *breadcrumbsFilePathOne;
+@property (nonatomic, readonly) NSString *breadcrumbsFilePathTwo;
+@property (nonatomic, readonly) NSString *previousBreadcrumbsFilePathOne;
+@property (nonatomic, readonly) NSString *previousBreadcrumbsFilePathTwo;
 
 - (nullable instancetype)initWithOptions:(SentryOptions *)options
                   andCurrentDateProvider:(id<SentryCurrentDateProvider>)currentDateProvider
+                                   error:(NSError **)error;
+
+- (nullable instancetype)initWithOptions:(SentryOptions *)options
+                  andCurrentDateProvider:(id<SentryCurrentDateProvider>)currentDateProvider
+                    dispatchQueueWrapper:(SentryDispatchQueueWrapper *)dispatchQueueWrapper
                                    error:(NSError **)error NS_DESIGNATED_INITIALIZER;
 
 - (void)setDelegate:(id<SentryFileManagerDelegate>)delegate;
@@ -37,7 +47,6 @@ SENTRY_NO_INIT
 + (BOOL)createDirectoryAtPath:(NSString *)path withError:(NSError **)error;
 
 - (void)deleteAllEnvelopes;
-
 - (void)deleteAllFolders;
 
 /**
@@ -64,6 +73,9 @@ SENTRY_NO_INIT
 - (SentryAppState *_Nullable)readAppState;
 - (SentryAppState *_Nullable)readPreviousAppState;
 - (void)deleteAppState;
+
+- (void)moveBreadcrumbsToPreviousBreadcrumbs;
+- (NSArray *)readPreviousBreadcrumbs;
 
 - (NSNumber *_Nullable)readTimezoneOffset;
 - (void)storeTimezoneOffset:(NSInteger)offset;

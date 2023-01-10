@@ -91,7 +91,7 @@ class ViewController: UIViewController {
                 _ = FileManager.default.contents(atPath: path)
             }
         }
-        
+
         guard let imgUrl = URL(string: "https://sentry-brand.storage.googleapis.com/sentry-logo-black.png") else {
             return
         }
@@ -291,4 +291,11 @@ class ViewController: UIViewController {
         SentrySDK.flush(timeout: 5)
     }
     
+    @IBAction func close(_ sender: Any) {
+        SentrySDK.close()
+    }
+    
+    @IBAction func startSDK(_ sender: Any) {
+        AppDelegate.startSentry()
+    }
 }

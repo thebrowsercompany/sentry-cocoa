@@ -47,11 +47,14 @@ jobs:
       - name: Download and Apply Patch
         run: ./apply-patch.sh "${{ github.event.pull_request.head.sha }}" "${{ github.sha }}" add-sentry-to-alamofire
 
-      - name: Install Firewalk
-        run: brew install alamofire/alamofire/firewalk
+      - name: Download Firewalk
+        run: curl "https://github.com/Alamofire/Firewalk/releases/download/0.8.1/firewalk.zip" --output firewalk.zip -L
+
+      - name: Unzip Firewalk
+        run: Unzip "firewalk.zip"
 
       - name: Start Firewalk
-        run: firewalk &
+        run: ./firewalk &
 
       - name: Validate Firewalk is running
         run: curl http://localhost:8080/
@@ -143,6 +146,7 @@ jobs:
   # adding our SDK doesn't cause any major issues.
   vlc-tests:
     runs-on: macos-12
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
         with:

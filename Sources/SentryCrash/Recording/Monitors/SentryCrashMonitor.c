@@ -42,7 +42,7 @@
 
 #include <memory.h>
 
-//#define SentryCrashLogger_LocalLevel TRACE
+// #define SentryCrashLogger_LocalLevel TRACE
 #include "SentryCrashLogger.h"
 
 // ============================================================================
@@ -146,9 +146,15 @@ addContextualInfoToEvent(Monitor *monitor, struct SentryCrash_MonitorContext *ev
 }
 
 void
-sentrycrashcm_setEventCallback(void (*onEvent)(struct SentryCrash_MonitorContext *monitorContext))
+sentrycrashcm_setEventCallback(SentryCrashMonitorEventCallback onEvent)
 {
     g_onExceptionEvent = onEvent;
+}
+
+SentryCrashMonitorEventCallback
+sentrycrashcm_getEventCallback(void)
+{
+    return g_onExceptionEvent;
 }
 
 void
