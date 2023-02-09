@@ -4,7 +4,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class SentryHub, SentryTransactionContext, SentryTraceHeader, SentryTraceContext,
-    SentryDispatchQueueWrapper, SentryTracer, SentryProfilesSamplerDecision, SentryMeasurementValue;
+    SentryNSTimerWrapper, SentryDispatchQueueWrapper, SentryTracer, SentryProfilesSamplerDecision,
+    SentryMeasurementValue;
 
 static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
 
@@ -23,9 +24,40 @@ static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
 @property (nonatomic, strong) SentryTransactionContext *transactionContext;
 
 /**
- * The context information of the span.
+ * Determines which trace the Span belongs to.
  */
-@property (nonatomic, readonly) SentrySpanContext *context;
+@property (nonatomic) SentryId *traceId;
+
+/**
+ * Span id.
+ */
+@property (nonatomic) SentrySpanId *spanId;
+
+/**
+ * Id of a parent span.
+ */
+@property (nullable, nonatomic) SentrySpanId *parentSpanId;
+
+/**
+ * If trace is sampled.
+ */
+@property (nonatomic) SentrySampleDecision sampled;
+
+/**
+ * Short code identifying the type of operation the span is measuring.
+ */
+@property (nonatomic, copy) NSString *operation;
+
+/**
+ * Longer description of the span's operation, which uniquely identifies the span but is
+ * consistent across instances of the span.
+ */
+@property (nullable, nonatomic, copy) NSString *spanDescription;
+
+/**
+ * Describes the status of the Transaction.
+ */
+@property (nonatomic) SentrySpanStatus status;
 
 /**
  * The timestamp of which the span ended.
@@ -106,6 +138,7 @@ static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
  * @param hub A hub to bind this transaction
  * @param profilesSamplerDecision Whether to sample a profile corresponding to this transaction
  * @param waitForChildren Whether this tracer should wait all children to finish.
+ * @param timerWrapper A writer around NSTimer, to make it testable
  *
  * @return SentryTracer
  */
@@ -113,7 +146,8 @@ static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
                                        hub:(nullable SentryHub *)hub
                    profilesSamplerDecision:
                        (nullable SentryProfilesSamplerDecision *)profilesSamplerDecision
-                           waitForChildren:(BOOL)waitForChildren;
+                           waitForChildren:(BOOL)waitForChildren
+                              timerWrapper:(nullable SentryNSTimerWrapper *)timerWrapper;
 
 /**
  * Init a SentryTracer with given transaction context, hub and whether the tracer should wait
@@ -142,6 +176,8 @@ static NSTimeInterval const SentryTracerDefaultTimeout = 3.0;
  * A method to inform the tracer that a span finished.
  */
 - (void)spanFinished:(id<SentrySpan>)finishedSpan;
+
+- (void)setExtraValue:(nullable id)value forKey:(NSString *)key DEPRECATED_ATTRIBUTE;
 
 /**
  * Get the tracer from a span.
