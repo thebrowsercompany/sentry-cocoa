@@ -28,6 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 SentryHub ()
 
 @property (nullable, nonatomic, strong) SentryClient *client;
+@property (nullable, nonatomic, strong) SentrySession *session;
 @property (nullable, nonatomic, strong) SentryScope *scope;
 @property (nonatomic, strong) SentryCrashWrapper *crashWrapper;
 @property (nonatomic, strong) SentryTracesSampler *tracesSampler;
@@ -97,7 +98,7 @@ SentryHub ()
         }
         _session = [[SentrySession alloc] initWithReleaseName:options.releaseName];
 
-        if (_errorsBeforeSession > 0 && options.enableAutoSessionTracking == true) {
+        if (_errorsBeforeSession > 0 && options.enableAutoSessionTracking == YES) {
             _session.errors = _errorsBeforeSession;
             _errorsBeforeSession = 0;
         }
@@ -356,7 +357,7 @@ SentryHub ()
                         customSamplingContext:(NSDictionary<NSString *, id> *)customSamplingContext
 {
     return [self startTransactionWithContext:transactionContext
-                                 bindToScope:false
+                                 bindToScope:NO
                        customSamplingContext:customSamplingContext];
 }
 
@@ -562,9 +563,9 @@ SentryHub ()
 }
 
 /**
- * Checks if a specific Integration (`integrationClass`) has been installed.
- * @return BOOL If instance of `integrationClass` exists within
- * `SentryHub.installedIntegrations`.
+ * Checks if a specific Integration (@c integrationClass) has been installed.
+ * @return @c YES if instance of @c integrationClass exists within
+ * @c SentryHub.installedIntegrations .
  */
 - (BOOL)isIntegrationInstalled:(Class)integrationClass
 {

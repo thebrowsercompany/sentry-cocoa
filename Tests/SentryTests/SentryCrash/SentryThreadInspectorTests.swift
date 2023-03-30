@@ -5,6 +5,7 @@ class SentryThreadInspectorTests: XCTestCase {
     private class Fixture {
         var testMachineContextWrapper = TestMachineContextWrapper()
         var stacktraceBuilder = TestSentryStacktraceBuilder(crashStackEntryMapper: SentryCrashStackEntryMapper(inAppLogic: SentryInAppLogic(inAppIncludes: [], inAppExcludes: [])))
+        var keepThreadAlive = true
         
         func getSut(testWithRealMachineContextWrapper: Bool = false) -> SentryThreadInspector {
             
@@ -78,6 +79,27 @@ class SentryThreadInspectorTests: XCTestCase {
         
         queue.activate()
         wait(for: [expect], timeout: 10)
+    }
+
+    func testGetCurrentThreadWithStackTrack_TooManyThreads() {
+        let expect = expectation(description: "Wait all Threads")
+        expect.expectedFulfillmentCount = 70
+
+        let sut = self.fixture.getSut(testWithRealMachineContextWrapper: true)
+
+        for _ in 0..<expect.expectedFulfillmentCount {
+            Thread.detachNewThread {
+                expect.fulfill()
+                while self.fixture.keepThreadAlive {
+                    Thread.sleep(forTimeInterval: 0.001)
+                }
+            }
+        }
+
+        wait(for: [expect], timeout: 5)
+        let suspendedThreads = sut.getCurrentThreadsWithStackTrace()
+        fixture.keepThreadAlive = false
+        XCTAssertEqual(suspendedThreads.count, 0)
     }
 
     func testStackTrackForCurrentThreadAsyncUnsafe() {
@@ -179,6 +201,28 @@ class SentryThreadInspectorTests: XCTestCase {
         
         XCTAssertEqual(threads[0].name, "main")
         XCTAssertEqual(threads[1].name, "Second Thread")
+    }
+
+    func testOnlyOneThreadIsMain() {
+        fixture.testMachineContextWrapper.mockThreads = [
+            ThreadInfo(threadId: 2, name: "Main Thread"),
+            ThreadInfo(threadId: 1, name: "First Thread") ]
+        fixture.testMachineContextWrapper.mainThread = 2
+        fixture.testMachineContextWrapper.threadCount = 2
+
+        let actualThreads = fixture.getSut().getCurrentThreads()
+
+        var actualMainThreadsCount = 0
+        var mainThread: SentryThread?
+        let threadCount = actualThreads.count
+        for i in 0..<threadCount {
+            if actualThreads[i].isMain!.boolValue {
+                actualMainThreadsCount += 1
+                mainThread = actualThreads[i]
+            }
+        }
+        XCTAssertEqual(actualMainThreadsCount, 1)
+        XCTAssertEqual(mainThread?.name, "Main Thread")
     }
 }
 

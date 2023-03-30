@@ -99,6 +99,13 @@ SentryUIViewControllerPerformanceTracker ()
         // Use the target itself to store the spanId to avoid using a global mapper.
         objc_setAssociatedObject(controller, &SENTRY_UI_PERFORMANCE_TRACKER_SPAN_ID, spanId,
             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        // If there is no active span in the queue push this transaction
+        // to serve as an umbrella transaction that will capture every span
+        // happening while the transaction is active.
+        if (self.tracker.activeSpanId == nil) {
+            [self.tracker pushActiveSpan:spanId];
+        }
     }
 }
 
@@ -150,9 +157,10 @@ SentryUIViewControllerPerformanceTracker ()
  * ‘will’ callback method, you end the process in both the corresponding ‘did’ and the opposite
  * ‘will’ callback method.
  *
- * As stated above viewWillAppear doesn't need to be followed by a viewDidAppear. A viewWillAppear
- * can also be followed by a viewWillDisappear. Therefore, we finish the transaction in
- * viewWillDisappear, if it wasn't already finished in viewDidAppear.
+ * As stated above @c viewWillAppear doesn't need to be followed by a @c viewDidAppear. A
+ * @c viewWillAppear can also be followed by a @c viewWillDisappear. Therefore, we finish the
+ * transaction in
+ * @c viewWillDisappear, if it wasn't already finished in @c viewDidAppear.
  */
 - (void)viewControllerViewWillDisappear:(UIViewController *)controller
                        callbackToOrigin:(void (^)(void))callbackToOrigin
@@ -185,7 +193,14 @@ SentryUIViewControllerPerformanceTracker ()
                                            operation:SentrySpanOperationUILoad
                                              inBlock:callbackToOrigin];
         };
+
         [self.tracker activateSpan:spanId duringBlock:duringBlock];
+        id<SentrySpan> vcSpan = [self.tracker getSpan:spanId];
+        // If the current controller span has no parent,
+        // it means it is the root transaction and need to be pop from the queue.
+        if (vcSpan.parentSpanId == nil) {
+            [self.tracker popActiveSpan];
+        }
 
         // If we are still tracking this UIViewController finish the transaction
         // and remove associated span id.

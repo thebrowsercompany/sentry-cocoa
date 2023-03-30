@@ -1,6 +1,73 @@
 # Changelog
 
 ## Unreleased
+## 8.3.3
+
+### Fixes
+
+- View hierarchy not sent for crashes (#2781)
+- Crash in Tracer for idle timeout (#2834)
+
+## 8.3.2
+
+### Features
+
+- Add CPU core count in device context (#2814)
+
+### Fixes
+
+
+- Updating AppHang state on main thread (#2793)
+- App Hang report crashes with too many threads (#2811)
+
+### Improvements
+
+- Remove not needed locks in SentryUser (#2809)
+
+## 8.3.1
+
+### Fixes 
+
+- Stop using UIScreen.main (#2762)
+- Profile timestamp alignment with transactions (#2771) and app start spans (#2772)
+- Fix crash when compiling profiling data during transaction serialization (#2786)
+
+## 8.3.0
+
+### Important Note
+This release can cause crashes when Profiling is enabled (#2779). Please update to `8.3.1`.
+
+### Fixes
+
+- Crash in AppHangs when no threads (#2725)
+- MetricKit stack traces (#2723)
+- InApp for MetricKit stack traces (#2739)
+- Mutating while enumerating crash in Tracer (#2744)
+- Normalize profiling timestamps relative to transaction start (#2729)
+
+## 8.2.0
+
+### Features
+
+- Add enableTracing option (#2693)
+- Add isMain thread to SentryThread (#2692)
+- Add `in_foreground` to App Context (#2692)
+- Combine UIKit and SwiftUI transactions (#2681)
+
+### Fixes
+
+- Cleanup AppHangTracking properly when closing SDK (#2671)
+- Add EXC_BAD_ACCESS subtypes to events (#2667)
+- Keep status of auto transactions when finishing (#2684)
+- Fix atomic import error for profiling (#2683)
+- Don't create breadcrumb for UITextField editingChanged event (#2686)
+- Fix EXC_BAD_ACCESS in SentryTracer (#2697)
+- Serialization of nullable booleans (#2706)
+
+### Improvements
+
+- Change debug image type to macho (#2701)
+
 ## 8.1.0
 
 ### Features
@@ -17,6 +84,7 @@
 - Carthage Xcode 14 compatibility issue (#2636)
 - Crash in CppException Monitor (#2639)
 - fix: Disable watchdog when disabling crash handler (#2621)
+- MachException Improvements (#2662)
 
 ## 8.0.0
 
@@ -41,6 +109,7 @@ We renamed the default branch from `master` to `main`. We are going to keep the 
   - [MXHangDiagnostic](https://developer.apple.com/documentation/metrickit/mxhangdiagnostic) 
   - [MXDiskWriteExceptionDiagnostic](https://developer.apple.com/documentation/metrickit/mxdiskwriteexceptiondiagnostic)
   - [MXCPUExceptionDiagnostic](https://developer.apple.com/documentation/metrickit/mxcpuexceptiondiagnostic)
+- Add a timeout for auto-generated transactions (#2535)
 
 ### Fixes
 
@@ -56,6 +125,7 @@ We renamed the default branch from `master` to `main`. We are going to keep the 
 - Remove delay for deleting old envelopes (#2541)
 - Fix strong reference cycle for HttpTransport (#2552)
 - Deleting old envelopes for empty DSN (#2562)
+- Remove `SentrySystemEventBreadcrumbs` observers with the most specific detail possible (#2489)
 
 ### Breaking Changes
 

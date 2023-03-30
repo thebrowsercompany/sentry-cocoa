@@ -12,17 +12,17 @@ NS_SWIFT_NAME(Span)
 /**
  * Determines which trace the Span belongs to.
  */
-@property (nonatomic) SentryId *traceId;
+@property (nonatomic, strong) SentryId *traceId;
 
 /**
  * Span id.
  */
-@property (nonatomic) SentrySpanId *spanId;
+@property (nonatomic, strong) SentrySpanId *spanId;
 
 /**
  * The id of the parent span.
  */
-@property (nullable, nonatomic) SentrySpanId *parentSpanId;
+@property (nullable, nonatomic, strong) SentrySpanId *parentSpanId;
 
 /**
  * The sampling decision of the trace.
@@ -72,9 +72,7 @@ NS_SWIFT_NAME(Span)
 
 /**
  * Starts a child span.
- *
  * @param operation Short code identifying the type of operation the span is measuring.
- *
  * @return SentrySpan
  */
 - (id<SentrySpan>)startChildWithOperation:(NSString *)operation
@@ -82,10 +80,8 @@ NS_SWIFT_NAME(Span)
 
 /**
  * Starts a child span.
- *
  * @param operation Defines the child span operation.
  * @param description Define the child span description.
- *
  * @return SentrySpan
  */
 - (id<SentrySpan>)startChildWithOperation:(NSString *)operation
@@ -98,7 +94,7 @@ NS_SWIFT_NAME(Span)
 - (void)setDataValue:(nullable id)value forKey:(NSString *)key NS_SWIFT_NAME(setData(value:key:));
 
 /**
- * Use setDataValue instead. This method calls setDataValue, was added by mistake, and will be
+ * Use @c setDataValue instead. This method calls @c setDataValue, was added by mistake, and will be
  * removed in a future version.
  */
 - (void)setExtraValue:(nullable id)value
@@ -123,10 +119,8 @@ NS_SWIFT_NAME(Span)
  * Set a measurement without unit. When setting the measurement without the unit, no formatting
  * will be applied to the measurement value in the Sentry product, and the value will be shown as
  * is.
- *
  * @discussion Setting a measurement with the same name on the same transaction multiple times only
  * keeps the last value.
- *
  * @param name the name of the measurement
  * @param value the value of the measurement
  */
@@ -135,10 +129,8 @@ NS_SWIFT_NAME(Span)
 
 /**
  * Set a measurement with specific unit.
- *
  * @discussion Setting a measurement with the same name on the same transaction multiple times only
  * keeps the last value.
- *
  * @param name the name of the measurement
  * @param value the value of the measurement
  * @param unit the unit the value is measured in
@@ -155,14 +147,12 @@ NS_SWIFT_NAME(Span)
 
 /**
  * Finishes the span by setting the end time and span status.
- *
  * @param status The status of this span
  *  */
 - (void)finishWithStatus:(SentrySpanStatus)status NS_SWIFT_NAME(finish(status:));
 
 /**
  * Returns the trace information that could be sent as a sentry-trace header.
- *
  * @return SentryTraceHeader.
  */
 - (SentryTraceHeader *)toTraceHeader;

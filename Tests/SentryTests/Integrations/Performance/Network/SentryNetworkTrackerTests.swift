@@ -1,4 +1,5 @@
 import ObjectiveC
+import SentryTestUtils
 import XCTest
 
 class SentryNetworkTrackerTests: XCTestCase {
@@ -472,8 +473,6 @@ class SentryNetworkTrackerTests: XCTestCase {
         assertOneSpanCreated(transaction)
     }
     
-    // Although we only run this test above the below specified versions, we expect the
-    // implementation to be thread safe
     func testResumeCalledMultipleTimesConcurrent_OneSpanCreated() {
         let task = createDataTask()
         let sut = fixture.getSut()
@@ -497,8 +496,6 @@ class SentryNetworkTrackerTests: XCTestCase {
         assertOneSpanCreated(transaction)
     }
     
-    // Although we only run this test above the below specified versions, we expect the
-    // implementation to be thread safe
     func testChangeStateMultipleTimesConcurrent_OneSpanFinished() {
         let task = createDataTask()
         let sut = fixture.getSut()
