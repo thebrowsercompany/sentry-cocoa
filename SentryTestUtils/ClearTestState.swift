@@ -16,16 +16,13 @@ class TestCleanup: NSObject {
         SentrySDK.setCurrentHub(nil)
         SentrySDK.crashedLastRunCalled = false
         SentrySDK.startInvocations = 0
-        PrivateSentrySDKOnly.onAppStartMeasurementAvailable = nil
         PrivateSentrySDKOnly.appStartMeasurementHybridSDKMode = false
-        SentrySDK.setAppStartMeasurement(nil)
-        CurrentDate.setCurrentDateProvider(nil)
         SentryNetworkTracker.sharedInstance.disable()
         
         setTestDefaultLogLevel()
 
         #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
-        let framesTracker = SentryFramesTracker.sharedInstance()
+        let framesTracker = SentryDependencyContainer.sharedInstance().framesTracker
         framesTracker.stop()
         framesTracker.resetFrames()
 
@@ -42,7 +39,13 @@ class TestCleanup: NSObject {
         SentryTracer.resetAppStartMeasurementRead()
 
 #if os(iOS) || os(macOS) || targetEnvironment(macCatalyst)
-        SentryTracer.resetConcurrencyTracking()
-#endif
+        SentryProfiler.getCurrent().stop(for: .normal)
+        SentryProfiler.resetConcurrencyTracking()
+#endif // os(iOS) || os(macOS) || targetEnvironment(macCatalyst)
+
+        #if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+        PrivateSentrySDKOnly.onAppStartMeasurementAvailable = nil
+        SentrySDK.setAppStartMeasurement(nil)
+        #endif // os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
     }
 }

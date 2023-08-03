@@ -5,6 +5,7 @@
 #    import "SentryEvent+Private.h"
 #    import "SentryInternalDefines.h"
 #    import "SentryLog.h"
+#    import "SentrySample.h"
 #    import "SentryTransaction.h"
 
 /**
@@ -17,7 +18,8 @@ void
 logSlicingFailureWithArray(
     NSArray<SentrySample *> *array, SentryTransaction *transaction, BOOL start)
 {
-    if (!SENTRY_CASSERT(array.count > 0, @"Should not have attempted to slice an empty array.")) {
+    if (!SENTRY_CASSERT_RETURN(
+            array.count > 0, @"Should not have attempted to slice an empty array.")) {
         return;
     }
 
@@ -82,8 +84,5 @@ NSArray<SentrySample *> *_Nullable slicedProfileSamples(
     const auto indices = [NSIndexSet indexSetWithIndexesInRange:range];
     return [samples objectsAtIndexes:indices];
 }
-
-@implementation SentrySample
-@end
 
 #endif // SENTRY_TARGET_PROFILING_SUPPORTED
