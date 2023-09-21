@@ -458,10 +458,11 @@ installExceptionHandler(void)
 
     const task_t thisTask = mach_task_self();
     // This is the default, which does not include EXC_CRASH
-    // `exception_mask_t mask = EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC | EXC_MASK_SOFTWARE | EXC_MASK_BREAKPOINT;
-    // However, if one cannot rely on Posix signal handlers for capturing
-    // SIGABRT, the Mach exception mask above is missing EXC_MASK_CRASH:
-    exception_mask_t mask = EXC_MASK_CRASH | EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC | EXC_MASK_SOFTWARE | EXC_MASK_BREAKPOINT;
+    // `exception_mask_t mask = EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION | EXC_MASK_ARITHMETIC
+    // | EXC_MASK_SOFTWARE | EXC_MASK_BREAKPOINT; However, if one cannot rely on Posix signal
+    // handlers for capturing SIGABRT, the Mach exception mask above is missing EXC_MASK_CRASH:
+    exception_mask_t mask = EXC_MASK_CRASH | EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION
+        | EXC_MASK_ARITHMETIC | EXC_MASK_SOFTWARE | EXC_MASK_BREAKPOINT;
 
     SentryCrashLOG_DEBUG("Backing up original exception ports.");
     kr = task_get_exception_ports(thisTask, mask, g_previousExceptionPorts.masks,
