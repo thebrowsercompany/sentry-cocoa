@@ -85,7 +85,7 @@ jobs:
         suite: ['High-end device', 'Mid-range device']
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: data-generator-build-products
       - run: npm install -g saucectl@0.107.2
