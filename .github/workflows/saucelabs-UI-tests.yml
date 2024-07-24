@@ -44,7 +44,7 @@ jobs:
       - run: git apply ./scripts/set-device-tests-environment.patch
       - name: Cache iOS-Swift App and dSYM build products
         id: ios-swift-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             DerivedData/Build/Products/Test-iphoneos/iOS-Swift.app.dSYM
@@ -52,7 +52,7 @@ jobs:
           key: ios-swift-for-ui-testing-cache-key-${{ hashFiles('Samples/iOS-Swift/iOS-Swift/**') }}-Xcode-${{ matrix.xcode }}-${{ hashFiles('Sources/Sentry/**') }}
       - name: Cache iOS-Swift UI Test Runner App build product
         id: ios-swift-uitest-runner-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             DerivedData/Build/Products/Test-iphoneos/iOS-SwiftUITests-Runner.app
