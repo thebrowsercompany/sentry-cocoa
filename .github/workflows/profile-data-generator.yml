@@ -21,7 +21,7 @@ jobs:
         run: brew install getsentry/tools/sentry-cli
       - name: Cache Carthage dependencies
         id: trendingmovies-carthage-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./Samples/TrendingMovies/Carthage/Build
           key: trendingmovies-carthage-cache-key-${{ hashFiles('Samples/TrendingMovies/Cartfile.resolved') }}
@@ -30,7 +30,7 @@ jobs:
         run: cd Samples/TrendingMovies && carthage update --use-xcframeworks
       - name: Cache TrendingMovies App and dSYM build products
         id: cache-trending-movies-app
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             DerivedData/Build/Products/Debug-iphoneos/TrendingMovies.app
@@ -38,7 +38,7 @@ jobs:
           key: trendingmovies-app-cache-key-${{ hashFiles('Samples/TrendingMovies/TrendingMovies/**') }}-${{ hashFiles('Sources/Sentry/**') }}
       - name: Cache ProfileDataGenerator UI Test Runner App build product
         id: cache-profiledatagenerator-test-runner-app
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             DerivedData/Build/Products/Debug-iphoneos/ProfileDataGeneratorUITest-Runner.app
