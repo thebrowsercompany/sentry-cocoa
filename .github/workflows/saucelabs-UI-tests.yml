@@ -37,7 +37,7 @@ jobs:
             xcode: '14.3'
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: ./scripts/ci-select-xcode.sh ${{matrix.xcode}}
       - name: Install SentryCli
         run: brew install getsentry/tools/sentry-cli
@@ -114,7 +114,7 @@ jobs:
             suite: 'iOS-12'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v3
         with:
